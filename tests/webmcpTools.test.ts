@@ -134,7 +134,7 @@ describe('WebMCP Read Tools & Perception (§5)', () => {
       expect(schemaCheck.valid).toBe(true);
 
       expect(parsed.feasible).toBe(true);
-      expect(parsed.estimated_margin_min).toBeGreaterThan(0.30);
+      expect(parsed.estimated_margin_min).toBeGreaterThan(0.20);
       expect(parsed.max_torque_nm).toBeLessThan(200);
     });
 

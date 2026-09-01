@@ -4,6 +4,9 @@ import { getRobotTelemetryTool } from './tools/get_robot_telemetry';
 import { scanSpatialEnvironmentTool } from './tools/scan_spatial_environment';
 import { evaluateGaitFeasibilityTool } from './tools/evaluate_gait_feasibility';
 import { queryFacilityStateTool } from './tools/query_facility_state';
+import { stageLocomotionPlanTool } from './tools/stage_locomotion_plan';
+import { executeStagedProposalTool } from './tools/execute_staged_proposal';
+import { overrideFacilityMechanismTool } from './tools/override_facility_mechanism';
 
 /**
  * Safely resolves the W3C WebMCP Model Context from navigator or document.
@@ -20,7 +23,7 @@ export function resolveModelContext(): ModelContext | null {
 }
 
 /**
- * Active WebMCP tool registry for Project A.E.G.I.S (§5).
+ * Active WebMCP tool registry for Project A.E.G.I.S (§5, §6).
  */
 export const ACTIVE_TOOLS: ToolDescriptor[] = [
   getSystemStatusTool,
@@ -28,6 +31,9 @@ export const ACTIVE_TOOLS: ToolDescriptor[] = [
   scanSpatialEnvironmentTool,
   evaluateGaitFeasibilityTool,
   queryFacilityStateTool,
+  stageLocomotionPlanTool,
+  executeStagedProposalTool,
+  overrideFacilityMechanismTool,
 ];
 
 /**

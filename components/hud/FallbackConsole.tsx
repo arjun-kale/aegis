@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ACTIVE_TOOLS } from '@/lib/webmcp/register';
 import { ToolDescriptor, ToolResult } from '@/lib/webmcp/types';
+import { useMissionStore } from '@/lib/state/missionStore';
 import { Play, Copy, Check, Terminal, ChevronRight, AlertCircle, Sparkles } from 'lucide-react';
 
 interface FallbackConsoleProps {
@@ -61,6 +62,69 @@ const TOOL_PAYLOAD_PRESETS: Record<string, { label: string; payload: any }[]> = 
   query_facility_state: [
     { label: 'Query Facility & Route Status', payload: {} },
   ],
+  stage_locomotion_plan: [
+    {
+      label: 'Stage Walk to East Corridor [4, 0, 0]',
+      payload: {
+        target_waypoint: [4, 0, 0],
+        gait_profile: 'CAUTIOUS_STEP',
+      },
+    },
+    {
+      label: 'Stage Walk to Extraction [18, 2.5, 19]',
+      payload: {
+        target_waypoint: [18, 2.5, 19],
+        gait_profile: 'CAUTIOUS_STEP',
+      },
+    },
+    {
+      label: 'Stage Walk with Auto-Approve Policy (>0.50)',
+      payload: {
+        target_waypoint: [2, 0, 2],
+        gait_profile: 'CAUTIOUS_STEP',
+        auto_approve_if_margin_above: 0.5,
+      },
+    },
+  ],
+  execute_staged_proposal: [
+    {
+      label: 'Execute Active Staged Proposal',
+      payload: {
+        proposal_id: 'CURRENT_PROPOSAL_ID',
+      },
+    },
+  ],
+  override_facility_mechanism: [
+    {
+      label: 'Disarm laser_gate_02 (Corridor E)',
+      payload: {
+        mechanism_id: 'laser_gate_02',
+        command: 'DEACTIVATE',
+      },
+    },
+    {
+      label: 'Open sealed_door_01 (With Auth Code)',
+      payload: {
+        mechanism_id: 'sealed_door_01',
+        command: 'DIVERT_POWER',
+        authorization_code: 'AEGIS-7749-AUTH',
+      },
+    },
+    {
+      label: 'Open sealed_door_01 (Without Code -> Fails)',
+      payload: {
+        mechanism_id: 'sealed_door_01',
+        command: 'DIVERT_POWER',
+      },
+    },
+    {
+      label: 'Raise freight_lift_01 to Upper Level',
+      payload: {
+        mechanism_id: 'freight_lift_01',
+        command: 'RAISE',
+      },
+    },
+  ],
 };
 
 export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
@@ -72,19 +136,25 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
   const [copied, setCopied] = useState<boolean>(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
 
+  const stagedProposal = useMissionStore((state) => state.stagedProposal);
+
   const currentTool: ToolDescriptor = ACTIVE_TOOLS[selectedToolIndex] || ACTIVE_TOOLS[0];
 
   // Update input JSON when changing tools
   useEffect(() => {
     const presets = TOOL_PAYLOAD_PRESETS[currentTool.name];
     if (presets && presets.length > 0) {
-      setInputJson(JSON.stringify(presets[0].payload, null, 2));
+      const p = { ...presets[0].payload };
+      if (currentTool.name === 'execute_staged_proposal' && stagedProposal) {
+        p.proposal_id = stagedProposal.id;
+      }
+      setInputJson(JSON.stringify(p, null, 2));
     } else {
       setInputJson('{}');
     }
     setExecutionResult(null);
     setJsonError(null);
-  }, [currentTool.name]);
+  }, [currentTool.name, stagedProposal]);
 
   if (!isOpen) return null;
 
@@ -143,12 +213,12 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
   const presets = TOOL_PAYLOAD_PRESETS[currentTool.name] || [];
 
   return (
-    <div className="absolute right-4 top-16 bottom-4 w-[540px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-surface/95 backdrop-blur-md border border-surface-border rounded-lg shadow-2xl overflow-hidden font-mono text-xs">
+    <div className="absolute right-4 top-16 bottom-4 w-[560px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-surface/95 backdrop-blur-md border border-surface-border rounded-lg shadow-2xl overflow-hidden font-mono text-xs">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold tracking-wide">
           <Terminal className="w-4 h-4 text-accent-cyan" />
-          <span>WEBMCP READ TOOLS HARNESS (§5)</span>
+          <span>WEBMCP ACTION & READ HARNESS (§5, §6)</span>
         </div>
         <button
           onClick={onClose}
@@ -198,15 +268,21 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
               <span>Quick Test Presets</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {presets.map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => setInputJson(JSON.stringify(p.payload, null, 2))}
-                  className="px-2.5 py-1 rounded bg-surface hover:bg-surface-raised border border-surface-border text-foreground text-[10px] transition-colors"
-                >
-                  {p.label}
-                </button>
-              ))}
+              {presets.map((p, i) => {
+                const payload = { ...p.payload };
+                if (currentTool.name === 'execute_staged_proposal' && stagedProposal) {
+                  payload.proposal_id = stagedProposal.id;
+                }
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setInputJson(JSON.stringify(payload, null, 2))}
+                    className="px-2.5 py-1 rounded bg-surface hover:bg-surface-raised border border-surface-border text-foreground text-[10px] transition-colors"
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

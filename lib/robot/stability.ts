@@ -38,6 +38,23 @@ function cross2D(o: Point2D, a: Point2D, b: Point2D): number {
 }
 
 /**
+ * Ensures a 2D polygon is strictly Counter-Clockwise (CCW).
+ */
+export function ensureCCW(polygon: Point2D[]): Point2D[] {
+  if (polygon.length < 3) return polygon;
+  let area = 0;
+  const n = polygon.length;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    area += polygon[i].x * polygon[j].z - polygon[j].x * polygon[i].z;
+  }
+  if (area < 0) {
+    return [...polygon].reverse();
+  }
+  return polygon;
+}
+
+/**
  * Computes 2D Convex Hull (Monotone Chain algorithm).
  */
 export function compute2DConvexHull(points: Point2D[]): Point2D[] {
@@ -67,7 +84,8 @@ export function compute2DConvexHull(points: Point2D[]): Point2D[] {
 
   lower.pop();
   upper.pop();
-  return lower.concat(upper);
+  const rawHull = lower.concat(upper);
+  return ensureCCW(rawHull);
 }
 
 /**

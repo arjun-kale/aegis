@@ -95,8 +95,13 @@ export function stepLocomotion(
   }
 
   const isTreadmill = totalDistance < 0.01;
-  const progressM = isTreadmill ? 0 : Math.min(totalDistance, rawProgress);
   const isComplete = !isTreadmill && rawProgress >= totalDistance;
+  const progressM = isTreadmill ? 0 : Math.min(totalDistance, rawProgress);
+
+  // Clamp effective gait time so stance/swing doesn't overshoot clamped path destination
+  const effectiveGaitTimeSec = isTreadmill || forwardSpeed < 1e-4
+    ? elapsedTimeSec * speedMultiplier
+    : Math.min(elapsedTimeSec * speedMultiplier, (totalDistance / forwardSpeed) * speedMultiplier);
 
   // Find current segment along path
   let segOrigin: [number, number, number] = [0, 0, 0];
@@ -131,7 +136,7 @@ export function stepLocomotion(
   // 1. Schedule foot targets and torso pose
   const gaitState = scheduleGait(
     profile,
-    elapsedTimeSec * speedMultiplier,
+    effectiveGaitTimeSec,
     0, // Already embedded in segOrigin
     segOrigin,
     heading

@@ -7,7 +7,7 @@
  * - HIGH_CLEARANCE: Exaggerated parabolic swing apex for debris and obstacle traversal.
  *
  * Guarantees zero foot sliding during stance and zero ground penetration during swing.
- * Fully supports arbitrary 3D path headings.
+ * Fully supports arbitrary 3D path headings with guaranteed C0 kinematic continuity.
  */
 
 import { FullBodyPoseTargets } from './kinematics';
@@ -36,7 +36,7 @@ export const GAIT_CONFIGS: Record<GaitProfileName, GaitConfig> = {
     swingApexM: 0.05,
     torsoHeightM: 0.90,        // Low CoM
     verticalBobM: 0.015,
-    lateralSwayM: 0.045,       // Pronounced sway directly over stance foot
+    lateralSwayM: 0.18,        // Shifts multi-body CoM to center of stance foot (0.14m)
     torsoPitchRad: 0.04,
     armSwingAngleRad: 0.15,
   },
@@ -48,7 +48,7 @@ export const GAIT_CONFIGS: Record<GaitProfileName, GaitConfig> = {
     swingApexM: 0.075,
     torsoHeightM: 0.95,        // Upright stance
     verticalBobM: 0.025,
-    lateralSwayM: 0.02,        // Tight lateral sway
+    lateralSwayM: 0.16,        // Dynamic active sway
     torsoPitchRad: 0.08,
     armSwingAngleRad: 0.45,    // Vigorous arm counter-swing
   },
@@ -60,7 +60,7 @@ export const GAIT_CONFIGS: Record<GaitProfileName, GaitConfig> = {
     swingApexM: 0.22,          // Exaggerated >20cm step-over apex
     torsoHeightM: 0.93,
     verticalBobM: 0.03,
-    lateralSwayM: 0.05,
+    lateralSwayM: 0.18,
     torsoPitchRad: 0.06,
     armSwingAngleRad: 0.20,
   },
@@ -136,9 +136,9 @@ export function scheduleGait(
   const rightZ = -sinH;
 
   // --- 1. TORSO TRAJECTORY ---
-  const sway = Math.sin(rawPhase * Math.PI * 2) * config.lateralSwayM;
+  // Sway moves over the stance leg: Left leg during phase [0, 0.5] (negative right = left), Right leg during [0.5, 1.0] (positive right)
+  const sway = -Math.sin(rawPhase * Math.PI * 2) * config.lateralSwayM;
   const bobY = Math.abs(Math.sin(rawPhase * Math.PI * 2)) * config.verticalBobM;
-  const yawTorso = Math.sin(rawPhase * Math.PI * 2) * (config.strideLengthM * 0.15);
 
   const nominalTorsoY = pathOrigin[1] + config.torsoHeightM + bobY;
   const basePosX = pathOrigin[0] + fwdX * pathProgress;
@@ -152,8 +152,8 @@ export function scheduleGait(
 
   const torsoRot: [number, number, number] = [
     config.torsoPitchRad * cosH,
-    pathHeading + yawTorso,
-    (sway / config.lateralSwayM) * 0.03,
+    pathHeading,
+    -config.torsoPitchRad * sinH,
   ];
 
   // --- 2. FEET TARGETS & PARABOLIC SWING ARCS ---
@@ -167,10 +167,15 @@ export function scheduleGait(
   if (!contactL) {
     const u = Math.max(0, Math.min(1, swingPhaseL));
     footL_Y = pathOrigin[1] + config.swingApexM * Math.sin(Math.PI * u);
-    footL_ProgOffset = -stride * 0.5 + stride * u;
+    footL_ProgOffset = -stride * 0.25 + stride * 0.5 * u;
   } else {
-    const phaseOffset = rawPhase < 0.5 ? 0.25 - rawPhase : 1.25 - rawPhase;
-    footL_ProgOffset = (phaseOffset - 0.5) * stride;
+    if (rawPhase <= 0.5) {
+      footL_ProgOffset = (0.25 - rawPhase) * stride;
+    } else if (rawPhase > 1.0 - halfDs) {
+      footL_ProgOffset = stride * 0.25;
+    } else {
+      footL_ProgOffset = -stride * 0.25;
+    }
     footL_Y = pathOrigin[1];
   }
 
@@ -184,10 +189,15 @@ export function scheduleGait(
   if (!contactR) {
     const u = Math.max(0, Math.min(1, swingPhaseR));
     footR_Y = pathOrigin[1] + config.swingApexM * Math.sin(Math.PI * u);
-    footR_ProgOffset = -stride * 0.5 + stride * u;
+    footR_ProgOffset = -stride * 0.25 + stride * 0.5 * u;
   } else {
-    const phaseOffset = rawPhase < 0.5 ? 0.75 - rawPhase : 0.75 - (rawPhase - 0.5);
-    footR_ProgOffset = (phaseOffset - 0.5) * stride;
+    if (rawPhase >= 0.5) {
+      footR_ProgOffset = (0.75 - rawPhase) * stride;
+    } else if (rawPhase < halfDs) {
+      footR_ProgOffset = stride * 0.25;
+    } else {
+      footR_ProgOffset = -stride * 0.25;
+    }
     footR_Y = pathOrigin[1];
   }
 

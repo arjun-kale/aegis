@@ -8,6 +8,7 @@ import { FrameTimeOverlay } from '@/components/hud/FrameTimeOverlay';
 import { IkDevPanel, STANCE_PRESETS } from '@/components/hud/IkDevPanel';
 import { GaitDevPanel } from '@/components/hud/GaitDevPanel';
 import { FacilityDevPanel } from '@/components/hud/FacilityDevPanel';
+import { AuthorityGateHUD } from '@/components/hud/AuthorityGateHUD';
 import { registerWebMcpTools } from '@/lib/webmcp/register';
 import {
   FullBodyPoseTargets,
@@ -42,9 +43,9 @@ export default function Home() {
   const [isFrameTimeOpen, setIsFrameTimeOpen] = useState<boolean>(false);
   const [isIkDevOpen, setIsIkDevOpen] = useState<boolean>(false);
   const [isGaitDevOpen, setIsGaitDevOpen] = useState<boolean>(false);
-  const [isFacilityDevOpen, setIsFacilityDevOpen] = useState<boolean>(true); // Open by default for Phase 4
+  const [isFacilityDevOpen, setIsFacilityDevOpen] = useState<boolean>(false);
 
-  // Facility & Seed State
+  // Facility & Store State
   const facilitySeed = useMissionStore((state) => state.facilitySeed);
   const setFacilitySeed = useMissionStore((state) => state.setFacilitySeed);
   const mechanisms = useMissionStore((state) => state.mechanisms);
@@ -52,6 +53,11 @@ export default function Home() {
   const explorationGrid = useMissionStore((state) => state.explorationGrid);
   const batchUpdateExplorationCells = useMissionStore((state) => state.batchUpdateExplorationCells);
   const scannedCellsCount = useMissionStore((state) => state.scannedCellsCount);
+
+  // Human Authority Gate Staged Proposal State
+  const stagedProposal = useMissionStore((state) => state.stagedProposal);
+  const approvalStatus = useMissionStore((state) => state.approvalStatus);
+  const setApprovalStatus = useMissionStore((state) => state.setApprovalStatus);
 
   // Generate facility geometry
   const facilityData: FacilityGeometryData = useMemo(
@@ -84,25 +90,38 @@ export default function Home() {
     STANCE_PRESETS.default.targets
   );
 
-  // Locomotion State
+  // Locomotion Engine State
   const [gaitProfile, setGaitProfile] = useState<GaitProfileName>('CAUTIOUS_STEP');
   const [selectedPathKey, setSelectedPathKey] = useState<string>('straight20m');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [elapsedSimTime, setElapsedSimTime] = useState<number>(0);
 
-  // Path for Locomotion Runner
+  // Active path for Locomotion Runner
   const activePath = useMemo(() => {
+    // If a proposal is actively executing, use its exact staged waypoints
+    if (stagedProposal && approvalStatus === 'EXECUTING' && stagedProposal.waypoints.length > 1) {
+      return stagedProposal.waypoints.map((pt) => ({ x: pt.x, y: pt.y, z: pt.z }));
+    }
     if (navPathResult.path.length > 1) {
       return navPathResult.path.map((pt) => ({ x: pt[0], y: pt[1], z: pt[2] }));
     }
     return STANDARD_PATHS[selectedPathKey]?.points || STANDARD_PATHS.straight20m.points;
-  }, [navPathResult, selectedPathKey]);
+  }, [stagedProposal, approvalStatus, navPathResult, selectedPathKey]);
+
+  const activeGait = stagedProposal && approvalStatus === 'EXECUTING' ? stagedProposal.gaitProfile : gaitProfile;
 
   // Step locomotion
   const locomotionResult: LocomotionFrameResult = useMemo(() => {
-    return stepLocomotion(gaitProfile, elapsedSimTime, activePath, playbackSpeed);
-  }, [gaitProfile, elapsedSimTime, activePath, playbackSpeed]);
+    return stepLocomotion(activeGait, elapsedSimTime, activePath, playbackSpeed);
+  }, [activeGait, elapsedSimTime, activePath, playbackSpeed]);
+
+  // When staged proposal completes path execution
+  useEffect(() => {
+    if (approvalStatus === 'EXECUTING' && locomotionResult.isComplete) {
+      setApprovalStatus('COMPLETED');
+    }
+  }, [approvalStatus, locomotionResult.isComplete, setApprovalStatus]);
 
   // Compute manual pose fallback
   const manualPose = useMemo(() => {
@@ -111,8 +130,9 @@ export default function Home() {
     return { kinematicState: pose, stabilityState: stab };
   }, [manualTargets]);
 
-  const currentPose = isPlaying || isGaitDevOpen ? locomotionResult.kinematicState : manualPose.kinematicState;
-  const currentStability = isPlaying || isGaitDevOpen ? locomotionResult.stabilityState : manualPose.stabilityState;
+  const isLocomoting = isPlaying || isGaitDevOpen || approvalStatus === 'EXECUTING';
+  const currentPose = isLocomoting ? locomotionResult.kinematicState : manualPose.kinematicState;
+  const currentStability = isLocomoting ? locomotionResult.stabilityState : manualPose.stabilityState;
 
   // Unexplored Frontiers from Spatial Scanner
   const [unexploredFrontiers, setUnexploredFrontiers] = useState<[number, number, number][]>([]);
@@ -122,7 +142,6 @@ export default function Home() {
     const robotOrigin = currentPose.torsoPosition;
     const scanRes = performSpatialScan(robotOrigin, 15, activeColliders, explorationGrid);
 
-    // Update store
     const updateRecord: Record<string, 'scanned'> = {};
     scanRes.newlyScannedCells.forEach((k) => (updateRecord[k] = 'scanned'));
     batchUpdateExplorationCells(updateRecord);
@@ -140,10 +159,11 @@ export default function Home() {
     }
   };
 
-  // Real-time animation loop when walking
+  // Real-time animation loop when walking or executing
   const lastTimeRef = useRef<number>(performance.now());
   useEffect(() => {
-    if (!isPlaying) return;
+    const shouldAnimate = isPlaying || approvalStatus === 'EXECUTING';
+    if (!shouldAnimate) return;
 
     let animId: number;
     lastTimeRef.current = performance.now();
@@ -157,7 +177,7 @@ export default function Home() {
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [isPlaying]);
+  }, [isPlaying, approvalStatus]);
 
   // Lifetime-scoped WebMCP tool registration
   useEffect(() => {
@@ -219,6 +239,13 @@ export default function Home() {
             setIsIkDevOpen(false);
             setIsGaitDevOpen(false);
           }
+        }}
+      />
+
+      {/* Human Authority Gate Prominent HUD Banner (§3.3) */}
+      <AuthorityGateHUD
+        onAbortExecution={() => {
+          setApprovalStatus('REJECTED', 'Operator Emergency Abort');
         }}
       />
 

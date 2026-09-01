@@ -17,7 +17,7 @@ interface RobotProps {
  * directly by analytical IK solutions. No external rigged GLTF loader in critical path.
  */
 export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
-  const { torsoPosition, torsoRotationEuler, legL, legR, armL, armR, headAngles } = pose;
+  const { torsoPosition, torsoRotationEuler, legL, legR, armL, armR, headRotationEuler } = pose;
 
   // Helper to build rotation matrix/quaternion pointing from A to B
   const getBoneOrientation = (
@@ -91,7 +91,7 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         {/* Sensor Head */}
         <group
           position={ROBOT_RIG.parts.head.offsetFromParent}
-          rotation={[headAngles.pitch, headAngles.yaw, 0]}
+          rotation={headRotationEuler}
         >
           <mesh castShadow receiveShadow>
             <boxGeometry args={ROBOT_RIG.parts.head.dimensions} />

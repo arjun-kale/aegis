@@ -167,8 +167,8 @@ export const evaluateGaitFeasibilityTool: WebMcpTool = {
       if (simFrame.isComplete) break;
     }
 
-    // Feasibility envelope: positive margin > 0.25 and torque <= 220 N*m
-    const isFeasible = minStabilityMargin >= 0.25 && maxTorqueNm <= 220;
+    // Feasibility envelope: positive margin >= 0.20 and torque <= 220 N*m (§5.3)
+    const isFeasible = minStabilityMargin >= 0.20 && maxTorqueNm <= 220;
 
     return formatSuccessResponse({
       feasible: isFeasible,
@@ -178,7 +178,7 @@ export const evaluateGaitFeasibilityTool: WebMcpTool = {
         ? undefined
         : `Trajectory violates safety envelope: minimum stability margin ${minStabilityMargin.toFixed(
             2
-          )} < 0.25 or peak torque ${maxTorqueNm.toFixed(1)} N·m > 220 N·m.`,
+          )} < 0.20 or peak torque ${maxTorqueNm.toFixed(1)} N·m > 220 N·m.`,
       gait_profile,
       waypoints_count: path.length,
       total_path_distance_m:

@@ -1,11 +1,19 @@
+/**
+ * Project A.E.G.I.S — Full-Body Kinematics Solver (§2)
+ *
+ * Couples torso root transform with limb IK solvers for legs, arms, and head.
+ * Guarantees zero-NaN joint state and updates the zero-allocation 60Hz Telemetry Bus.
+ * Fully supports arbitrary yaw orientation for omnidirectional locomotion.
+ */
+
 import { ROBOT_RIG } from './rig';
 import { solveTwoBoneIK, TwoBoneIKSolution } from './ik';
-import { writeTelemetry, writeTelemetrySingle } from '../state/telemetryBus';
+import { writeTelemetry } from '../state/telemetryBus';
 import { TELEMETRY_OFFSETS } from '../state/telemetryOffsets';
 
 export interface FullBodyPoseTargets {
   torsoPosition: [number, number, number];
-  torsoRotationEuler: [number, number, number]; // [pitch, roll, yaw]
+  torsoRotationEuler: [number, number, number]; // [roll, pitch, yaw]
   footL: [number, number, number];
   footR: [number, number, number];
   handL?: [number, number, number];
@@ -20,12 +28,10 @@ export interface FullBodyKinematicState {
   legR: TwoBoneIKSolution;
   armL: TwoBoneIKSolution;
   armR: TwoBoneIKSolution;
-  headAngles: { pitch: number; yaw: number };
+  headRotationEuler: [number, number, number];
+  allJointAngles: number[]; // Float slice for telemetry
 }
 
-/**
- * Solves the full-body kinematic pose from root and limb end-effector targets.
- */
 export function solveFullBodyKinematics(
   targets: FullBodyPoseTargets
 ): FullBodyKinematicState {
@@ -34,34 +40,29 @@ export function solveFullBodyKinematics(
 
   // 1. Calculate World Positions for Limb Roots based on Torso Pose
   const [tx, ty, tz] = torsoPosition;
+  const yaw = torsoRotationEuler[1] || 0;
+  const cosY = Math.cos(yaw);
+  const sinY = Math.sin(yaw);
 
-  // Torso hip offsets
+  const rotateOffset = (ox: number, oy: number, oz: number): [number, number, number] => {
+    const rx = tx + ox * cosY + oz * sinY;
+    const ry = ty + oy;
+    const rz = tz - ox * sinY + oz * cosY;
+    return [rx, ry, rz];
+  };
+
   const hipLOffset = ROBOT_RIG.parts.hip_l.offsetFromParent;
   const hipROffset = ROBOT_RIG.parts.hip_r.offsetFromParent;
   const shoulderLOffset = ROBOT_RIG.parts.shoulder_l.offsetFromParent;
   const shoulderROffset = ROBOT_RIG.parts.shoulder_r.offsetFromParent;
 
-  const hipLRoot: [number, number, number] = [
-    tx + hipLOffset[0],
-    ty + hipLOffset[1],
-    tz + hipLOffset[2],
-  ];
-  const hipRRoot: [number, number, number] = [
-    tx + hipROffset[0],
-    ty + hipROffset[1],
-    tz + hipROffset[2],
-  ];
+  const hipLRoot = rotateOffset(hipLOffset[0], hipLOffset[1], hipLOffset[2]);
+  const hipRRoot = rotateOffset(hipROffset[0], hipROffset[1], hipROffset[2]);
+  const shoulderLRoot = rotateOffset(shoulderLOffset[0], shoulderLOffset[1], shoulderLOffset[2]);
+  const shoulderRRoot = rotateOffset(shoulderROffset[0], shoulderROffset[1], shoulderROffset[2]);
 
-  const shoulderLRoot: [number, number, number] = [
-    tx + shoulderLOffset[0],
-    ty + shoulderLOffset[1],
-    tz + shoulderLOffset[2],
-  ];
-  const shoulderRRoot: [number, number, number] = [
-    tx + shoulderROffset[0],
-    ty + shoulderROffset[1],
-    tz + shoulderROffset[2],
-  ];
+  // Knee forward pole vector aligned with torso heading
+  const kneePoleVector: [number, number, number] = [sinY, 0, cosY];
 
   // 2. Solve Legs IK
   const legL = solveTwoBoneIK({
@@ -69,7 +70,7 @@ export function solveFullBodyKinematics(
     target: footL,
     l1: ROBOT_RIG.limbs.legL.l1,
     l2: ROBOT_RIG.limbs.legL.l2,
-    poleVector: ROBOT_RIG.limbs.legL.defaultPoleVector,
+    poleVector: kneePoleVector,
     minBendAngleRad: 0.05,
     maxBendAngleRad: 2.3,
   });
@@ -79,7 +80,7 @@ export function solveFullBodyKinematics(
     target: footR,
     l1: ROBOT_RIG.limbs.legR.l1,
     l2: ROBOT_RIG.limbs.legR.l2,
-    poleVector: ROBOT_RIG.limbs.legR.defaultPoleVector,
+    poleVector: kneePoleVector,
     minBendAngleRad: 0.05,
     maxBendAngleRad: 2.3,
   });
@@ -116,11 +117,11 @@ export function solveFullBodyKinematics(
   let headPitch = 0;
   let headYaw = 0;
   if (headLookAt) {
-    const headPos: [number, number, number] = [
-      tx + ROBOT_RIG.parts.head.offsetFromParent[0],
-      ty + ROBOT_RIG.parts.head.offsetFromParent[1],
-      tz + ROBOT_RIG.parts.head.offsetFromParent[2],
-    ];
+    const headPos = rotateOffset(
+      ROBOT_RIG.parts.head.offsetFromParent[0],
+      ROBOT_RIG.parts.head.offsetFromParent[1],
+      ROBOT_RIG.parts.head.offsetFromParent[2]
+    );
     const dx = headLookAt[0] - headPos[0];
     const dy = headLookAt[1] - headPos[1];
     const dz = headLookAt[2] - headPos[2];
@@ -144,12 +145,13 @@ export function solveFullBodyKinematics(
     footR[1] <= 0.02 ? 1.0 : 0.0,
   ]);
 
-  // Write joint angles into telemetry bus buffer
-  const jointAngleSlice = [
+  const allJointAngles = [
     legL.baseAngleRad,
     legL.midAngleRad,
+    0,
     legR.baseAngleRad,
     legR.midAngleRad,
+    0,
     armL.baseAngleRad,
     armL.midAngleRad,
     armR.baseAngleRad,
@@ -157,7 +159,8 @@ export function solveFullBodyKinematics(
     headPitch,
     headYaw,
   ];
-  writeTelemetry(TELEMETRY_OFFSETS.JOINTS_START, jointAngleSlice);
+
+  writeTelemetry(TELEMETRY_OFFSETS.JOINTS_START, allJointAngles);
 
   return {
     torsoPosition,
@@ -166,6 +169,7 @@ export function solveFullBodyKinematics(
     legR,
     armL,
     armR,
-    headAngles: { pitch: headPitch, yaw: headYaw },
+    headRotationEuler: [headPitch, headYaw, 0],
+    allJointAngles,
   };
 }
