@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { FpsCounter } from './FpsCounter';
 import { resolveModelContext } from '@/lib/webmcp/register';
-import { Shield, Radio, Terminal, Activity, Sliders } from 'lucide-react';
+import { Shield, Radio, Terminal, Activity, Sliders, Footprints } from 'lucide-react';
 
 interface HeaderProps {
   onToggleConsole: () => void;
@@ -12,6 +12,8 @@ interface HeaderProps {
   isFrameTimeOpen: boolean;
   onToggleIkDev: () => void;
   isIkDevOpen: boolean;
+  onToggleGaitDev: () => void;
+  isGaitDevOpen: boolean;
 }
 
 export function Header({
@@ -21,6 +23,8 @@ export function Header({
   isFrameTimeOpen,
   onToggleIkDev,
   isIkDevOpen,
+  onToggleGaitDev,
+  isGaitDevOpen,
 }: HeaderProps) {
   const [hasWebMcp, setHasWebMcp] = useState<boolean | null>(null);
   const [isSecure, setIsSecure] = useState<boolean>(true);
@@ -44,7 +48,7 @@ export function Header({
               A.E.G.I.S
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-raised border border-surface-border text-foreground-muted uppercase tracking-widest font-mono">
-              v0.1.0 • Phase 2
+              v0.1.0 • Phase 3
             </span>
           </div>
           <div className="text-[11px] text-foreground-muted">
@@ -84,8 +88,21 @@ export function Header({
       {/* Right Controls */}
       <div className="flex items-center gap-2">
         <button
+          onClick={onToggleGaitDev}
+          title="Toggle Gait & Locomotion Bench (F4)"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono transition-colors border ${
+            isGaitDevOpen
+              ? 'bg-accent-teal/30 border-accent-teal text-accent-cyan'
+              : 'bg-surface-raised hover:bg-surface border-surface-border text-foreground'
+          }`}
+        >
+          <Footprints className="w-3.5 h-3.5" />
+          <span>GAIT BENCH</span>
+        </button>
+
+        <button
           onClick={onToggleIkDev}
-          title="Toggle IK Rig Dev Sliders"
+          title="Toggle IK Rig Dev Sliders (F3)"
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono transition-colors border ${
             isIkDevOpen
               ? 'bg-accent-teal/30 border-accent-teal text-accent-cyan'
