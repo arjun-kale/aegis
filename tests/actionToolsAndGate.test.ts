@@ -81,13 +81,34 @@ describe('WebMCP Action Tools & Human Authority Gate (§6)', () => {
       expect(store.approvalStatus).toBe('PENDING_APPROVAL');
     });
 
+    it('cannot be self-approved by an agent-supplied override under default MANUAL_APPROVAL policy', async () => {
+      // Regression test: an earlier version of this tool accepted an
+      // `auto_approve_if_margin_above` argument and used it to call
+      // store.setApprovalStatus('APPROVED') directly, letting the calling
+      // agent bypass the human Authority Gate regardless of autonomyMode.
+      // Approval must only ever come from the store's own autonomyMode /
+      // safetyThreshold, which only the human-operated HUD can set.
+      const res = await stageLocomotionPlanTool.execute({
+        target_waypoint: [4, 0, 0],
+        gait_profile: 'CAUTIOUS_STEP',
+        // @ts-expect-error — this field must not exist on the tool's input type
+        auto_approve_if_margin_above: 0,
+      } as any);
+
+      expect(res.isError).toBe(false);
+      const parsed = JSON.parse(res.content[0].text);
+      expect(parsed.status).toBe('PENDING_APPROVAL');
+
+      const store = useMissionStore.getState();
+      expect(store.approvalStatus).toBe('PENDING_APPROVAL');
+    });
+
     it('auto-approves proposal when AUTO_APPROVE_SAFE is configured and margin meets threshold', async () => {
       useMissionStore.getState().setAutonomyMode('AUTO_APPROVE_SAFE', 0.20);
 
       const res = await stageLocomotionPlanTool.execute({
         target_waypoint: [4, 0, 0],
         gait_profile: 'CAUTIOUS_STEP',
-        auto_approve_if_margin_above: 0.20,
       });
 
       expect(res.isError).toBe(false);

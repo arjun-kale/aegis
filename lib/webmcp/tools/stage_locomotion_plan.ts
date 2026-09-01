@@ -36,11 +36,6 @@ export const stageLocomotionPlanTool: WebMcpTool = {
         enum: ['CAUTIOUS_STEP', 'DYNAMIC_BALANCE', 'HIGH_CLEARANCE'],
         description: 'Locomotion gait profile to use during traversal',
       },
-      auto_approve_if_margin_above: {
-        type: 'number',
-        description:
-          'Optional threshold: auto-approve proposal if predicted minimum stability margin meets or exceeds this value',
-      },
     },
     required: ['target_waypoint', 'gait_profile'],
     additionalProperties: false,
@@ -85,9 +80,8 @@ export const stageLocomotionPlanTool: WebMcpTool = {
   execute: async (args: {
     target_waypoint: [number, number, number];
     gait_profile: GaitProfileName;
-    auto_approve_if_margin_above?: number;
   }) => {
-    const { target_waypoint, gait_profile, auto_approve_if_margin_above } = args;
+    const { target_waypoint, gait_profile } = args;
 
     if (!Array.isArray(target_waypoint) || target_waypoint.length !== 3) {
       return formatFailureResponse(
@@ -194,28 +188,13 @@ export const stageLocomotionPlanTool: WebMcpTool = {
       stagedAt: Date.now(),
     };
 
-    // 5. Evaluate Autonomy & Approval Policy
-    let finalStatus: 'STAGED' | 'APPROVED' | 'PENDING_APPROVAL' = 'PENDING_APPROVAL';
-
-    if (
-      auto_approve_if_margin_above !== undefined &&
-      minStabilityMargin >= auto_approve_if_margin_above
-    ) {
-      finalStatus = 'APPROVED';
-    } else if (
-      store.autonomyMode === 'AUTO_APPROVE_SAFE' &&
-      minStabilityMargin >= store.safetyThreshold
-    ) {
-      finalStatus = 'APPROVED';
-    } else {
-      finalStatus = 'PENDING_APPROVAL';
-    }
-
-    // Update store state
+    // 5. Stage the proposal. The store alone decides approval, from the
+    // human-controlled autonomyMode/safetyThreshold (§0: agents cannot grant
+    // themselves approval — only the operator's Authority Gate toggle can).
     store.stageProposal(proposal);
-    if (finalStatus === 'APPROVED') {
-      store.setApprovalStatus('APPROVED');
-    }
+    const finalStatus = useMissionStore.getState().approvalStatus as
+      | 'APPROVED'
+      | 'PENDING_APPROVAL';
 
     // Append to audit log
     store.addLogEntry({
