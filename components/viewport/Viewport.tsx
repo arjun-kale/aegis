@@ -1,15 +1,22 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid } from '@react-three/drei';
 import { SceneMetricsTracker } from './SceneMetricsTracker';
+import { Robot } from './Robot';
+import { FullBodyKinematicState } from '@/lib/robot/kinematics';
 
-export default function Viewport() {
+interface ViewportProps {
+  pose: FullBodyKinematicState;
+  showTargetGizmos?: boolean;
+}
+
+export default function Viewport({ pose, showTargetGizmos = false }: ViewportProps) {
   return (
     <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
       <Canvas
-        camera={{ position: [8, 6, 8], fov: 45 }}
+        camera={{ position: [2.5, 1.8, 3.2], fov: 45 }}
         shadows
         gl={{
           antialias: true,
@@ -17,57 +24,52 @@ export default function Viewport() {
         }}
       >
         <color attach="background" args={['#14171A']} />
-        
-        {/* Lights */}
+
+        {/* Studio & Mission Lighting */}
         <ambientLight intensity={0.4} />
         <directionalLight
-          position={[10, 15, 10]}
-          intensity={1.2}
+          position={[6, 10, 6]}
+          intensity={1.4}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-bias={-0.0001}
         />
-        
-        {/* Ground grid */}
+        <directionalLight
+          position={[-6, 6, -4]}
+          intensity={0.3}
+          color="#3E7C79"
+        />
+
+        {/* 40m Technical Nav Grid */}
         <Grid
-          position={[0, -0.01, 0]}
+          position={[0, -0.001, 0]}
           args={[40, 40]}
-          cellSize={1}
+          cellSize={0.5}
           cellThickness={1}
-          cellColor="#333A42"
-          sectionSize={5}
+          cellColor="#262B30"
+          sectionSize={2.5}
           sectionThickness={1.5}
           sectionColor="#3E7C79"
-          fadeDistance={30}
+          fadeDistance={25}
           fadeStrength={1.5}
         />
 
-        {/* Phase 0 origin marker / calibration reference */}
-        <group position={[0, 0.5, 0]}>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial
-              color="#262B30"
-              roughness={0.4}
-              metalness={0.6}
-              emissive="#3E7C79"
-              emissiveIntensity={0.2}
-            />
-          </mesh>
-        </group>
+        {/* Procedural Bipedal Robot Hierarchy */}
+        <Robot pose={pose} showTargetGizmos={showTargetGizmos} />
 
         {/* Controls */}
         <OrbitControls
           makeDefault
           enableDamping
           dampingFactor={0.08}
-          minDistance={2}
-          maxDistance={40}
-          maxPolarAngle={Math.PI / 2 - 0.05} // Prevent camera going under floor
+          minDistance={1.2}
+          maxDistance={25}
+          target={[0, 0.75, 0]}
+          maxPolarAngle={Math.PI / 2 - 0.02}
         />
 
-        {/* Scene metrics tracker feeding WebMCP telemetry */}
+        {/* Scene metrics tracker feeding WebMCP and telemetry bus */}
         <SceneMetricsTracker />
       </Canvas>
     </div>
