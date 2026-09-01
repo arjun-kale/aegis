@@ -26,8 +26,8 @@ export interface StabilityAnalysisResult {
   };
 }
 
-const FOOT_WIDTH = ROBOT_RIG.parts.foot_l.dimensions[0];   // 0.12m
-const FOOT_LENGTH = ROBOT_RIG.parts.foot_l.dimensions[2];  // 0.24m
+const FOOT_WIDTH = ROBOT_RIG.parts.foot_l.dimensions[0];   // 0.12m (width)
+const FOOT_LENGTH = ROBOT_RIG.parts.foot_l.dimensions[2];  // 0.24m (length)
 const NORMALIZATION_RADIUS_M = 0.10; // Characteristic margin scaling radius
 
 /**
@@ -118,7 +118,6 @@ export function computeMultiBodyCoM(
   let totalWeightedZ = 0;
   let totalMass = 0;
 
-  // Helper to accumulate part
   const addPart = (mass: number, center: [number, number, number]) => {
     totalWeightedX += mass * center[0];
     totalWeightedY += mass * center[1];
@@ -222,29 +221,37 @@ export function evaluateStaticStability(
   const comGround: [number, number, number] = [comWorld[0], 0, comWorld[2]];
   const comPoint: Point2D = { x: comWorld[0], z: comWorld[2] };
 
-  // 1. Build contact points from contacting feet
+  // 1. Build contact points from contacting feet with yaw orientation
   const rawContactPoints: Point2D[] = [];
   const hw = FOOT_WIDTH / 2;
   const hl = FOOT_LENGTH / 2;
+  const yaw = pose.torsoRotationEuler[1] || 0;
+  const cosY = Math.cos(yaw);
+  const sinY = Math.sin(yaw);
+
+  const addRotatedFootCorners = (fx: number, fz: number) => {
+    const localOffsets = [
+      [-hw, -hl],
+      [hw, -hl],
+      [hw, hl],
+      [-hw, hl],
+    ];
+
+    for (const [lx, lz] of localOffsets) {
+      const rx = fx + lx * cosY + lz * sinY;
+      const rz = fz - lx * sinY + lz * cosY;
+      rawContactPoints.push({ x: rx, z: rz });
+    }
+  };
 
   if (contactL) {
     const [fx, , fz] = pose.legL.end;
-    rawContactPoints.push(
-      { x: fx - hw, z: fz - hl },
-      { x: fx + hw, z: fz - hl },
-      { x: fx + hw, z: fz + hl },
-      { x: fx - hw, z: fz + hl }
-    );
+    addRotatedFootCorners(fx, fz);
   }
 
   if (contactR) {
     const [fx, , fz] = pose.legR.end;
-    rawContactPoints.push(
-      { x: fx - hw, z: fz - hl },
-      { x: fx + hw, z: fz - hl },
-      { x: fx + hw, z: fz + hl },
-      { x: fx - hw, z: fz + hl }
-    );
+    addRotatedFootCorners(fx, fz);
   }
 
   // Determine Stance State
@@ -259,7 +266,6 @@ export function evaluateStaticStability(
     stanceState = 3; // FLIGHT
   }
 
-  // If no contact, stability is 0 or negative
   if (rawContactPoints.length === 0) {
     return {
       comWorld,
@@ -322,42 +328,53 @@ export function evaluateStaticStability(
   let torqueAnkleR = 0;
 
   if (contactL && contactR) {
-    // Shared load ~50% each
     const halfWeight = (totalMass * g) / 2;
-    const momentArmKneeL = Math.abs(pose.legL.mid[2] - comWorld[2]);
-    const momentArmHipL = Math.abs(pose.legL.root[2] - comWorld[2]);
+    const momentArmKneeL = Math.sqrt(
+      (pose.legL.mid[0] - comWorld[0]) ** 2 + (pose.legL.mid[2] - comWorld[2]) ** 2
+    );
+    const momentArmHipL = Math.sqrt(
+      (pose.legL.root[0] - comWorld[0]) ** 2 + (pose.legL.root[2] - comWorld[2]) ** 2
+    );
     torqueKneeL = halfWeight * Math.max(0.08, momentArmKneeL);
     torqueHipL = halfWeight * Math.max(0.06, momentArmHipL);
     torqueAnkleL = halfWeight * 0.05;
 
-    const momentArmKneeR = Math.abs(pose.legR.mid[2] - comWorld[2]);
-    const momentArmHipR = Math.abs(pose.legR.root[2] - comWorld[2]);
+    const momentArmKneeR = Math.sqrt(
+      (pose.legR.mid[0] - comWorld[0]) ** 2 + (pose.legR.mid[2] - comWorld[2]) ** 2
+    );
+    const momentArmHipR = Math.sqrt(
+      (pose.legR.root[0] - comWorld[0]) ** 2 + (pose.legR.root[2] - comWorld[2]) ** 2
+    );
     torqueKneeR = halfWeight * Math.max(0.08, momentArmKneeR);
     torqueHipR = halfWeight * Math.max(0.06, momentArmHipR);
     torqueAnkleR = halfWeight * 0.05;
   } else if (contactL) {
-    // Left Stance: Full body mass on Left Leg
     const fullWeight = totalMass * g;
-    const momentArmKneeL = Math.abs(pose.legL.mid[2] - comWorld[2]);
-    const momentArmHipL = Math.abs(pose.legL.root[2] - comWorld[2]);
+    const momentArmKneeL = Math.sqrt(
+      (pose.legL.mid[0] - comWorld[0]) ** 2 + (pose.legL.mid[2] - comWorld[2]) ** 2
+    );
+    const momentArmHipL = Math.sqrt(
+      (pose.legL.root[0] - comWorld[0]) ** 2 + (pose.legL.root[2] - comWorld[2]) ** 2
+    );
     torqueKneeL = fullWeight * Math.max(0.12, momentArmKneeL);
     torqueHipL = fullWeight * Math.max(0.10, momentArmHipL);
     torqueAnkleL = fullWeight * 0.08;
 
-    // Right Swing Leg: only supports right leg mass
     torqueKneeR = legMass * g * 0.15;
     torqueHipR = legMass * g * 0.20;
     torqueAnkleR = 5.0;
   } else if (contactR) {
-    // Right Stance: Full body mass on Right Leg
     const fullWeight = totalMass * g;
-    const momentArmKneeR = Math.abs(pose.legR.mid[2] - comWorld[2]);
-    const momentArmHipR = Math.abs(pose.legR.root[2] - comWorld[2]);
+    const momentArmKneeR = Math.sqrt(
+      (pose.legR.mid[0] - comWorld[0]) ** 2 + (pose.legR.mid[2] - comWorld[2]) ** 2
+    );
+    const momentArmHipR = Math.sqrt(
+      (pose.legR.root[0] - comWorld[0]) ** 2 + (pose.legR.root[2] - comWorld[2]) ** 2
+    );
     torqueKneeR = fullWeight * Math.max(0.12, momentArmKneeR);
     torqueHipR = fullWeight * Math.max(0.10, momentArmHipR);
     torqueAnkleR = fullWeight * 0.08;
 
-    // Left Swing Leg
     torqueKneeL = legMass * g * 0.15;
     torqueHipL = legMass * g * 0.20;
     torqueAnkleL = 5.0;
@@ -368,7 +385,6 @@ export function evaluateStaticStability(
   writeTelemetrySingle(TELEMETRY_OFFSETS.STABILITY_MARGIN, stabilityMargin);
   writeTelemetrySingle(TELEMETRY_OFFSETS.STANCE_STATE, stanceState);
 
-  // Write joint torques into telemetry buffer
   const torqueSlice = [
     torqueHipL,
     torqueKneeL,

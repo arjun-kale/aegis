@@ -53,7 +53,7 @@ export function validateSchema(
         if (key in obj && obj[key] !== undefined) {
           const val = obj[key];
           const expectedType = propSchema.type;
-          
+
           if (expectedType === 'string' && typeof val !== 'string') {
             errors.push({
               field: key,
@@ -94,3 +94,5 @@ export function validateSchema(
 
   return { valid: errors.length === 0, errors };
 }
+
+export const validateAgainstSchema = validateSchema;

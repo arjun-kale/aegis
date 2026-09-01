@@ -1,5 +1,9 @@
 import { ModelContext, ToolDescriptor } from './types';
 import { getSystemStatusTool } from './tools/get_system_status';
+import { getRobotTelemetryTool } from './tools/get_robot_telemetry';
+import { scanSpatialEnvironmentTool } from './tools/scan_spatial_environment';
+import { evaluateGaitFeasibilityTool } from './tools/evaluate_gait_feasibility';
+import { queryFacilityStateTool } from './tools/query_facility_state';
 
 /**
  * Safely resolves the W3C WebMCP Model Context from navigator or document.
@@ -16,10 +20,14 @@ export function resolveModelContext(): ModelContext | null {
 }
 
 /**
- * Active tool registry for Phase 0 (expanded in subsequent phases).
+ * Active WebMCP tool registry for Project A.E.G.I.S (§5).
  */
 export const ACTIVE_TOOLS: ToolDescriptor[] = [
   getSystemStatusTool,
+  getRobotTelemetryTool,
+  scanSpatialEnvironmentTool,
+  evaluateGaitFeasibilityTool,
+  queryFacilityStateTool,
 ];
 
 /**

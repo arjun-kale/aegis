@@ -22,8 +22,17 @@ export interface ToolDescriptor<TArgs = any> {
     additionalProperties?: boolean;
     [key: string]: unknown;
   };
+  outputSchema?: {
+    type: 'object';
+    properties?: Record<string, unknown>;
+    required?: string[];
+    additionalProperties?: boolean;
+    [key: string]: unknown;
+  };
   execute: (args: TArgs) => Promise<ToolResult> | ToolResult;
 }
+
+export type WebMcpTool<TArgs = any> = ToolDescriptor<TArgs>;
 
 export interface ModelContext {
   registerTool: (tool: ToolDescriptor) => void;

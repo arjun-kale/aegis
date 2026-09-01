@@ -1,27 +1,92 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ACTIVE_TOOLS } from '@/lib/webmcp/register';
 import { ToolDescriptor, ToolResult } from '@/lib/webmcp/types';
-import { Play, Copy, Check, Terminal, ChevronRight, AlertCircle } from 'lucide-react';
+import { Play, Copy, Check, Terminal, ChevronRight, AlertCircle, Sparkles } from 'lucide-react';
 
 interface FallbackConsoleProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const TOOL_PAYLOAD_PRESETS: Record<string, { label: string; payload: any }[]> = {
+  get_system_status: [
+    { label: 'Verbose Query', payload: { verbose: true } },
+    { label: 'Standard Query', payload: { verbose: false } },
+  ],
+  get_robot_telemetry: [
+    { label: 'Live Robot Telemetry', payload: {} },
+  ],
+  scan_spatial_environment: [
+    { label: 'Standard 15m Scan', payload: { scan_mode: 'high_res', range_m: 15 } },
+    { label: 'Fast 8m Scan', payload: { scan_mode: 'fast', range_m: 8 } },
+    { label: 'Trigger 50m Out-of-Bounds Error', payload: { scan_mode: 'high_res', range_m: 50 } },
+  ],
+  evaluate_gait_feasibility: [
+    {
+      label: 'Level Hallway (CAUTIOUS_STEP)',
+      payload: {
+        path: [
+          [0, 0, 0],
+          [4, 0, 0],
+          [8, 0, 0],
+        ],
+        gait_profile: 'CAUTIOUS_STEP',
+      },
+    },
+    {
+      label: 'Ramp Incline (DYNAMIC_BALANCE Error)',
+      payload: {
+        path: [
+          [10, 0, 2],
+          [10, 0.5, 4],
+          [10, 2.0, 9],
+        ],
+        gait_profile: 'DYNAMIC_BALANCE',
+      },
+    },
+    {
+      label: 'Ramp Incline (CAUTIOUS_STEP Feasible)',
+      payload: {
+        path: [
+          [10, 0, 2],
+          [10, 0.5, 4],
+          [10, 2.0, 9],
+        ],
+        gait_profile: 'CAUTIOUS_STEP',
+      },
+    },
+  ],
+  query_facility_state: [
+    { label: 'Query Facility & Route Status', payload: {} },
+  ],
+};
+
 export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
   const [selectedToolIndex, setSelectedToolIndex] = useState<number>(0);
-  const [inputJson, setInputJson] = useState<string>('{\n  "verbose": true\n}');
+  const [inputJson, setInputJson] = useState<string>('{}');
   const [executionResult, setExecutionResult] = useState<ToolResult | null>(null);
   const [executing, setExecuting] = useState<boolean>(false);
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const currentTool: ToolDescriptor = ACTIVE_TOOLS[selectedToolIndex] || ACTIVE_TOOLS[0];
+
+  // Update input JSON when changing tools
+  useEffect(() => {
+    const presets = TOOL_PAYLOAD_PRESETS[currentTool.name];
+    if (presets && presets.length > 0) {
+      setInputJson(JSON.stringify(presets[0].payload, null, 2));
+    } else {
+      setInputJson('{}');
+    }
+    setExecutionResult(null);
+    setJsonError(null);
+  }, [currentTool.name]);
+
+  if (!isOpen) return null;
 
   const handleExecute = async () => {
     setJsonError(null);
@@ -75,13 +140,15 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const presets = TOOL_PAYLOAD_PRESETS[currentTool.name] || [];
+
   return (
-    <div className="absolute right-4 top-16 bottom-4 w-[520px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-surface/95 backdrop-blur-md border border-surface-border rounded-lg shadow-2xl overflow-hidden font-mono text-xs">
+    <div className="absolute right-4 top-16 bottom-4 w-[540px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-surface/95 backdrop-blur-md border border-surface-border rounded-lg shadow-2xl overflow-hidden font-mono text-xs">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold tracking-wide">
           <Terminal className="w-4 h-4 text-accent-cyan" />
-          <span>WEBMCP FALLBACK HARNESS</span>
+          <span>WEBMCP READ TOOLS HARNESS (§5)</span>
         </div>
         <button
           onClick={onClose}
@@ -91,16 +158,15 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
         </button>
       </div>
 
-      {/* Tool Selector */}
+      {/* Tool Selector Tabs */}
       <div className="flex items-center gap-1 p-2 bg-surface-muted border-b border-surface-border overflow-x-auto">
         {ACTIVE_TOOLS.map((tool, idx) => (
           <button
             key={tool.name}
             onClick={() => {
               setSelectedToolIndex(idx);
-              setExecutionResult(null);
             }}
-            className={`px-3 py-1.5 rounded text-xs whitespace-nowrap transition-colors ${
+            className={`px-3 py-1.5 rounded text-[11px] whitespace-nowrap transition-colors ${
               selectedToolIndex === idx
                 ? 'bg-accent-teal text-foreground font-bold'
                 : 'text-foreground-muted hover:bg-surface hover:text-foreground'
@@ -112,23 +178,44 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col p-4 gap-4 overflow-y-auto">
-        {/* Tool Doc & Guidance */}
-        <div className="p-3 rounded bg-surface-muted border border-surface-border text-[11px] space-y-1.5">
+      <div className="flex-1 flex flex-col p-4 gap-3.5 overflow-y-auto">
+        {/* Tool Doc & Contract */}
+        <div className="p-3 rounded bg-surface-muted border border-surface-border text-[11px] space-y-1">
           <div className="text-accent-cyan font-semibold flex items-center gap-1">
             <ChevronRight className="w-3 h-3" />
-            TOOL CONTRACT & DESCRIPTION
+            <span>TOOL CONTRACT & DESCRIPTION</span>
           </div>
-          <p className="text-foreground-muted leading-relaxed">
+          <p className="text-foreground-muted leading-relaxed text-[11px]">
             {currentTool.description}
           </p>
         </div>
 
+        {/* Payload Presets */}
+        {presets.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1 text-foreground-muted text-[10px] uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-accent-cyan" />
+              <span>Quick Test Presets</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {presets.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInputJson(JSON.stringify(p.payload, null, 2))}
+                  className="px-2.5 py-1 rounded bg-surface hover:bg-surface-raised border border-surface-border text-foreground text-[10px] transition-colors"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Input Parameters Editor */}
-        <div className="flex flex-col gap-1.5 flex-1 min-h-[160px]">
+        <div className="flex flex-col gap-1.5 flex-1 min-h-[140px]">
           <div className="flex items-center justify-between text-foreground-muted text-[11px]">
-            <span>INPUT JSON SCHEMA</span>
-            <span>args: Record&lt;string, any&gt;</span>
+            <span>INPUT JSON PAYLOAD</span>
+            <span>JSON Schema Compliant</span>
           </div>
           <textarea
             value={inputJson}
@@ -137,7 +224,7 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
               setJsonError(null);
             }}
             spellCheck={false}
-            className="w-full flex-1 p-3 bg-[#0E1012] border border-surface-border rounded text-foreground font-mono text-xs focus:outline-none focus:border-accent-cyan transition-colors resize-none"
+            className="w-full flex-1 p-2.5 bg-[#0E1012] border border-surface-border rounded text-foreground font-mono text-xs focus:outline-none focus:border-accent-cyan transition-colors resize-none"
           />
           {jsonError && (
             <div className="flex items-center gap-1.5 text-accent-red text-[11px]">
@@ -152,9 +239,9 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
           <button
             onClick={handleExecute}
             disabled={executing}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-semibold transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-semibold transition-colors disabled:opacity-50 text-xs"
           >
-            <Play className="w-4 h-4 fill-current" />
+            <Play className="w-3.5 h-3.5 fill-current" />
             <span>{executing ? 'EXECUTING...' : 'INVOKE TOOL DIRECTLY'}</span>
           </button>
         </div>
@@ -164,10 +251,19 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px] text-foreground-muted">
               <div className="flex items-center gap-2">
-                <span>EXECUTION OUTPUT</span>
+                <span>EXECUTION RESPONSE</span>
                 {executionTimeMs !== null && (
                   <span className="text-accent-cyan">({executionTimeMs}ms)</span>
                 )}
+                <span
+                  className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                    executionResult.isError
+                      ? 'bg-accent-red/20 text-accent-red border border-accent-red'
+                      : 'bg-accent-green/20 text-accent-green border border-accent-green'
+                  }`}
+                >
+                  {executionResult.isError ? 'REJECTED / ERROR' : 'SCHEMA_VALID (200 OK)'}
+                </span>
               </div>
               <button
                 onClick={handleCopy}

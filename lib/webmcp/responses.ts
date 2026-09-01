@@ -17,13 +17,14 @@ export function formatSuccessResponse(payload: Record<string, unknown>): ToolRes
         text: JSON.stringify(body, null, 2),
       },
     ],
+    isError: false,
   };
 }
 
 export function formatFailureResponse(
   status: string,
   reason: string,
-  recoverable: boolean,
+  recoverable: boolean = false,
   suggestedAction?: string,
   details?: Record<string, unknown>
 ): ToolResult {

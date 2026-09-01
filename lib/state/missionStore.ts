@@ -62,6 +62,11 @@ export interface MissionState {
   autonomyMode: AutonomyMode;
   safetyThreshold: number;
 
+  // Robot Discrete Metrics
+  batterySoc: number;
+  thermalHeadroom: number;
+  activeFaults: string[];
+
   // Facility Mechanisms
   mechanisms: Record<string, MechanismRecord>;
 
@@ -83,6 +88,9 @@ export interface MissionState {
   rejectProposal: (reason: string) => void;
   setApprovalStatus: (status: ApprovalStatus, rejectionReason?: string) => void;
   setAutonomyMode: (mode: AutonomyMode, threshold?: number) => void;
+  setBatterySoc: (soc: number) => void;
+  setThermalHeadroom: (headroom: number) => void;
+  setActiveFaults: (faults: string[]) => void;
   updateMechanism: (id: string, updates: Partial<MechanismRecord>) => void;
   setMechanisms: (mechanisms: Record<string, MechanismRecord>) => void;
   addLogEntry: (entry: Omit<MissionLogEntry, 'id' | 'timestamp'>) => void;
@@ -97,29 +105,29 @@ const INITIAL_MECHANISMS: Record<string, MechanismRecord> = {
   laser_gate_01: {
     id: 'laser_gate_01',
     type: 'LASER_GATE',
-    state: 'ARMED',
-    location: { x: 12, y: 0, z: -4 },
-    passable: false,
+    state: 'DISARMED',
+    location: { x: 0, y: 0, z: 4 },
+    passable: true,
   },
   laser_gate_02: {
     id: 'laser_gate_02',
     type: 'LASER_GATE',
     state: 'ARMED',
-    location: { x: 24, y: 0, z: 8 },
+    location: { x: 10, y: 0, z: 0 },
     passable: false,
   },
   freight_lift_01: {
     id: 'freight_lift_01',
     type: 'FREIGHT_LIFT',
     state: 'LOWERED',
-    location: { x: 18, y: 0, z: 15 },
+    location: { x: 14, y: 0, z: 0 },
     passable: true,
   },
   sealed_door_01: {
     id: 'sealed_door_01',
     type: 'SEALED_DOOR',
     state: 'SEALED',
-    location: { x: -8, y: 0, z: 12 },
+    location: { x: -8, y: 0, z: 0 },
     passable: false,
   },
 };
@@ -131,6 +139,9 @@ export const useMissionStore = create<MissionState>()(
     rejectionReason: null,
     autonomyMode: 'MANUAL_APPROVAL',
     safetyThreshold: 0.6,
+    batterySoc: 0.94,
+    thermalHeadroom: 0.88,
+    activeFaults: [],
     mechanisms: INITIAL_MECHANISMS,
     missionLog: [
       {
@@ -194,6 +205,21 @@ export const useMissionStore = create<MissionState>()(
       set((state) => ({
         autonomyMode: mode,
         safetyThreshold: threshold !== undefined ? threshold : state.safetyThreshold,
+      })),
+
+    setBatterySoc: (soc) =>
+      set(() => ({
+        batterySoc: Math.max(0, Math.min(1, soc)),
+      })),
+
+    setThermalHeadroom: (headroom) =>
+      set(() => ({
+        thermalHeadroom: Math.max(0, Math.min(1, headroom)),
+      })),
+
+    setActiveFaults: (faults) =>
+      set(() => ({
+        activeFaults: faults,
       })),
 
     updateMechanism: (id, updates) =>

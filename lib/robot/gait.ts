@@ -7,6 +7,7 @@
  * - HIGH_CLEARANCE: Exaggerated parabolic swing apex for debris and obstacle traversal.
  *
  * Guarantees zero foot sliding during stance and zero ground penetration during swing.
+ * Fully supports arbitrary 3D path headings.
  */
 
 import { FullBodyPoseTargets } from './kinematics';
@@ -100,8 +101,6 @@ export function scheduleGait(
   const halfDs = ds / 2;
 
   // Stance / Swing phase partitioning in [0, 1):
-  // [0.0 .. 0.5]: Left Foot Stance, Right Foot Swings
-  // [0.5 .. 1.0]: Right Foot Stance, Left Foot Swings
   let contactL = true;
   let contactR = true;
   let stanceStateName: 'DOUBLE_SUPPORT' | 'LEFT_STANCE' | 'RIGHT_STANCE' = 'DOUBLE_SUPPORT';
@@ -110,104 +109,110 @@ export function scheduleGait(
   let swingPhaseR = 0; // 0..1 during right swing
 
   if (rawPhase >= halfDs && rawPhase < 0.5 - halfDs) {
-    // Right foot is swinging, Left foot in stance
     contactR = false;
     contactL = true;
     stanceStateName = 'LEFT_STANCE';
     swingPhaseR = (rawPhase - halfDs) / (0.5 - ds);
   } else if (rawPhase >= 0.5 + halfDs && rawPhase < 1.0 - halfDs) {
-    // Left foot is swinging, Right foot in stance
     contactL = false;
     contactR = true;
     stanceStateName = 'RIGHT_STANCE';
     swingPhaseL = (rawPhase - 0.5 - halfDs) / (0.5 - ds);
   } else {
-    // Double Support phase
     contactL = true;
     contactR = true;
     stanceStateName = 'DOUBLE_SUPPORT';
   }
 
+  // Heading unit vectors
+  const cosH = Math.cos(pathHeading);
+  const sinH = Math.sin(pathHeading);
+
+  // Forward unit vector: (sinH, 0, cosH)
+  // Right normal vector: (cosH, 0, -sinH)
+  const fwdX = sinH;
+  const fwdZ = cosH;
+  const rightX = cosH;
+  const rightZ = -sinH;
+
   // --- 1. TORSO TRAJECTORY ---
-  // Lateral weight shift sway (moves over the stance leg)
-  const swayX = Math.sin(rawPhase * Math.PI * 2) * config.lateralSwayM;
-  // Vertical bob (peaks twice per cycle during single stance extensions)
+  const sway = Math.sin(rawPhase * Math.PI * 2) * config.lateralSwayM;
   const bobY = Math.abs(Math.sin(rawPhase * Math.PI * 2)) * config.verticalBobM;
-  // Torso yaw counter-rotation
   const yawTorso = Math.sin(rawPhase * Math.PI * 2) * (config.strideLengthM * 0.15);
 
   const nominalTorsoY = pathOrigin[1] + config.torsoHeightM + bobY;
-  const forwardZ = pathOrigin[2] + pathProgress;
+  const basePosX = pathOrigin[0] + fwdX * pathProgress;
+  const basePosZ = pathOrigin[2] + fwdZ * pathProgress;
 
   const torsoPos: [number, number, number] = [
-    pathOrigin[0] + swayX * Math.cos(pathHeading),
+    basePosX + rightX * sway,
     nominalTorsoY,
-    forwardZ + swayX * Math.sin(pathHeading),
+    basePosZ + rightZ * sway,
   ];
 
   const torsoRot: [number, number, number] = [
-    config.torsoPitchRad,
-    (swayX / config.lateralSwayM) * 0.03,
+    config.torsoPitchRad * cosH,
     pathHeading + yawTorso,
+    (sway / config.lateralSwayM) * 0.03,
   ];
 
   // --- 2. FEET TARGETS & PARABOLIC SWING ARCS ---
-  const footSpacingX = 0.14; // half hip width
+  const footSpacing = 0.14; // half hip width
   const stride = config.strideLengthM;
 
   // Compute Foot Left Position
-  let footL_X = pathOrigin[0] - footSpacingX;
+  let footL_ProgOffset = 0;
   let footL_Y = pathOrigin[1];
-  let footL_Z = forwardZ;
 
   if (!contactL) {
-    // Left Swing Phase: Parabolic Bézier curve from -stride to +stride
     const u = Math.max(0, Math.min(1, swingPhaseL));
-    // Vertical apex curve
     footL_Y = pathOrigin[1] + config.swingApexM * Math.sin(Math.PI * u);
-    // Forward translation from behind to ahead
-    const stepZOffset = -stride * 0.5 + stride * u;
-    footL_Z = forwardZ + stepZOffset;
+    footL_ProgOffset = -stride * 0.5 + stride * u;
   } else {
-    // Left Stance Phase: planted firmly
     const phaseOffset = rawPhase < 0.5 ? 0.25 - rawPhase : 1.25 - rawPhase;
-    const plantedZOffset = (phaseOffset - 0.5) * stride;
-    footL_Z = forwardZ + plantedZOffset;
+    footL_ProgOffset = (phaseOffset - 0.5) * stride;
     footL_Y = pathOrigin[1];
   }
 
+  const footL_X = basePosX - rightX * footSpacing + fwdX * footL_ProgOffset;
+  const footL_Z = basePosZ - rightZ * footSpacing + fwdZ * footL_ProgOffset;
+
   // Compute Foot Right Position
-  let footR_X = pathOrigin[0] + footSpacingX;
+  let footR_ProgOffset = 0;
   let footR_Y = pathOrigin[1];
-  let footR_Z = forwardZ;
 
   if (!contactR) {
-    // Right Swing Phase
     const u = Math.max(0, Math.min(1, swingPhaseR));
     footR_Y = pathOrigin[1] + config.swingApexM * Math.sin(Math.PI * u);
-    const stepZOffset = -stride * 0.5 + stride * u;
-    footR_Z = forwardZ + stepZOffset;
+    footR_ProgOffset = -stride * 0.5 + stride * u;
   } else {
-    // Right Stance Phase
     const phaseOffset = rawPhase < 0.5 ? 0.75 - rawPhase : 0.75 - (rawPhase - 0.5);
-    const plantedZOffset = (phaseOffset - 0.5) * stride;
-    footR_Z = forwardZ + plantedZOffset;
+    footR_ProgOffset = (phaseOffset - 0.5) * stride;
     footR_Y = pathOrigin[1];
   }
 
+  const footR_X = basePosX + rightX * footSpacing + fwdX * footR_ProgOffset;
+  const footR_Z = basePosZ + rightZ * footSpacing + fwdZ * footR_ProgOffset;
+
   // --- 3. ARM SWING COUNTER-OSCILLATION ---
   const armSwing = Math.sin(rawPhase * Math.PI * 2) * config.armSwingAngleRad;
-  const handL_Z = torsoPos[2] + Math.sin(armSwing) * 0.35;
-  const handR_Z = torsoPos[2] - Math.sin(armSwing) * 0.35;
+  const handL_X = torsoPos[0] - rightX * 0.26 + fwdX * Math.sin(armSwing) * 0.35;
+  const handL_Z = torsoPos[2] - rightZ * 0.26 + fwdZ * Math.sin(armSwing) * 0.35;
+  const handR_X = torsoPos[0] + rightX * 0.26 - fwdX * Math.sin(armSwing) * 0.35;
+  const handR_Z = torsoPos[2] + rightZ * 0.26 - fwdZ * Math.sin(armSwing) * 0.35;
 
   const targets: FullBodyPoseTargets = {
     torsoPosition: torsoPos,
     torsoRotationEuler: torsoRot,
     footL: [footL_X, footL_Y, footL_Z],
     footR: [footR_X, footR_Y, footR_Z],
-    handL: [torsoPos[0] - 0.26, torsoPos[1] - 0.40, handL_Z],
-    handR: [torsoPos[0] + 0.26, torsoPos[1] - 0.40, handR_Z],
-    headLookAt: [torsoPos[0], torsoPos[1] + 0.3, torsoPos[2] + 4.0],
+    handL: [handL_X, torsoPos[1] - 0.40, handL_Z],
+    handR: [handR_X, torsoPos[1] - 0.40, handR_Z],
+    headLookAt: [
+      torsoPos[0] + fwdX * 4.0,
+      torsoPos[1] + 0.3,
+      torsoPos[2] + fwdZ * 4.0,
+    ],
   };
 
   return {
