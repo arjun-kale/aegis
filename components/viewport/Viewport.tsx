@@ -6,11 +6,12 @@ import { OrbitControls, Grid, Line } from '@react-three/drei';
 import { SceneMetricsTracker } from './SceneMetricsTracker';
 import { Robot } from './Robot';
 import { Facility } from './Facility';
+import { GhostTrajectory } from './GhostTrajectory';
 import { FullBodyKinematicState } from '@/lib/robot/kinematics';
 import { StabilityAnalysisResult } from '@/lib/robot/stability';
 import { LocomotionPathPoint } from '@/lib/robot/locomotion';
 import { FacilityGeometryData } from '@/lib/world/generator';
-import { MechanismRecord } from '@/lib/state/missionStore';
+import { MechanismRecord, StagedProposal } from '@/lib/state/missionStore';
 import * as THREE from 'three';
 
 interface ViewportProps {
@@ -20,6 +21,7 @@ interface ViewportProps {
   facilityData?: FacilityGeometryData;
   mechanismStates?: Record<string, MechanismRecord>;
   unexploredFrontiers?: [number, number, number][];
+  stagedProposal?: StagedProposal | null;
   showTargetGizmos?: boolean;
   showSupportPolygon?: boolean;
 }
@@ -31,6 +33,7 @@ export default function Viewport({
   facilityData,
   mechanismStates = {},
   unexploredFrontiers = [],
+  stagedProposal = null,
   showTargetGizmos = false,
   showSupportPolygon = true,
 }: ViewportProps) {
@@ -83,7 +86,7 @@ export default function Viewport({
           color="#3E7C79"
         />
 
-        {/* 60m Technical Nav Grid */}
+        {/* 60m Technical Nav Grid (§7 palette) */}
         <Grid
           position={[0, -0.001, 0]}
           args={[60, 60]}
@@ -105,26 +108,31 @@ export default function Viewport({
           />
         )}
 
-        {/* Trajectory / A* Path Line */}
-        {pathLinePoints.length > 1 && (
-          <Line
-            points={pathLinePoints}
-            color="#00E5FF"
-            lineWidth={3}
-            dashed
-            dashScale={4}
-            dashSize={0.4}
-            gapSize={0.2}
-          />
+        {/* 1. Staged Proposal Ghost Trajectory with One Bold Moment (§7, §6) */}
+        {stagedProposal ? (
+          <GhostTrajectory proposal={stagedProposal} />
+        ) : (
+          /* Active Trajectory Line fallback when not in staged proposal mode */
+          pathLinePoints.length > 1 && (
+            <Line
+              points={pathLinePoints}
+              color="#3E7C79"
+              lineWidth={3}
+              dashed
+              dashScale={4}
+              dashSize={0.4}
+              gapSize={0.2}
+            />
+          )
         )}
 
-        {/* Unexplored Frontier Markers (Cyan Pointers) */}
+        {/* Unexplored Frontier Markers (Teal Pointers) */}
         {unexploredFrontiers.map((f, idx) => (
           <mesh key={`frontier_${idx}`} position={[f[0], f[1] + 0.1, f[2]]}>
             <coneGeometry args={[0.15, 0.4, 8]} />
             <meshStandardMaterial
-              color="#00E5FF"
-              emissive="#00E5FF"
+              color="#3E7C79"
+              emissive="#3E7C79"
               emissiveIntensity={1.2}
               wireframe
             />
@@ -139,8 +147,8 @@ export default function Viewport({
                 points={polygonPoints}
                 color={
                   stabilityState.stabilityMargin >= 0.6
-                    ? '#2ECC71'
-                    : stabilityState.stabilityMargin >= 0.4
+                    ? '#3E7C79'
+                    : stabilityState.stabilityMargin >= 0.35
                     ? '#D98A2B'
                     : '#C4472F'
                 }
@@ -151,7 +159,7 @@ export default function Viewport({
             <mesh position={stabilityState.comGround}>
               <cylinderGeometry args={[0.05, 0.05, 0.01, 16]} />
               <meshBasicMaterial
-                color={stabilityState.isInsidePolygon ? '#00E5FF' : '#C4472F'}
+                color={stabilityState.isInsidePolygon ? '#3E7C79' : '#C4472F'}
               />
             </mesh>
           </group>

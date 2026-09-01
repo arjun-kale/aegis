@@ -94,6 +94,7 @@ export interface MissionState {
   updateMechanism: (id: string, updates: Partial<MechanismRecord>) => void;
   setMechanisms: (mechanisms: Record<string, MechanismRecord>) => void;
   addLogEntry: (entry: Omit<MissionLogEntry, 'id' | 'timestamp'>) => void;
+  clearMissionLog: () => void;
   updateExplorationCell: (cellKey: string, status: CellExplorationStatus) => void;
   batchUpdateExplorationCells: (cells: Record<string, CellExplorationStatus>) => void;
   setDisassemblyFactor: (factor: number) => void;
@@ -249,6 +250,11 @@ export const useMissionStore = create<MissionState>()(
             timestamp: Date.now(),
           },
         ],
+      })),
+
+    clearMissionLog: () =>
+      set(() => ({
+        missionLog: [],
       })),
 
     updateExplorationCell: (cellKey, status) =>

@@ -9,6 +9,8 @@ import { IkDevPanel, STANCE_PRESETS } from '@/components/hud/IkDevPanel';
 import { GaitDevPanel } from '@/components/hud/GaitDevPanel';
 import { FacilityDevPanel } from '@/components/hud/FacilityDevPanel';
 import { AuthorityGateHUD } from '@/components/hud/AuthorityGateHUD';
+import { TelemetryPanel } from '@/components/hud/TelemetryPanel';
+import { ToolCallLog } from '@/components/hud/ToolCallLog';
 import { registerWebMcpTools } from '@/lib/webmcp/register';
 import {
   FullBodyPoseTargets,
@@ -31,7 +33,7 @@ import { useMissionStore } from '@/lib/state/missionStore';
 const Viewport = dynamic(() => import('@/components/viewport/Viewport'), {
   ssr: false,
   loading: () => (
-    <div className="flex flex-col items-center justify-center w-full h-full bg-[#14171A] text-foreground-muted font-mono text-xs gap-3">
+    <div className="flex flex-col items-center justify-center w-full h-full bg-[#14171A] text-[#8E99A2] font-mono text-xs gap-3">
       <div className="w-8 h-8 border-2 border-accent-teal border-t-transparent rounded-full animate-spin" />
       <div>INITIALIZING 3D FACILITY & ENGINE...</div>
     </div>
@@ -44,6 +46,8 @@ export default function Home() {
   const [isIkDevOpen, setIsIkDevOpen] = useState<boolean>(false);
   const [isGaitDevOpen, setIsGaitDevOpen] = useState<boolean>(false);
   const [isFacilityDevOpen, setIsFacilityDevOpen] = useState<boolean>(false);
+  const [isTelemetryOpen, setIsTelemetryOpen] = useState<boolean>(true);
+  const [isToolLogOpen, setIsToolLogOpen] = useState<boolean>(false);
 
   // Facility & Store State
   const facilitySeed = useMissionStore((state) => state.facilitySeed);
@@ -187,10 +191,13 @@ export default function Home() {
     };
   }, []);
 
-  // Keyboard shortcut listener (F2: Perf, F3: IKDev, F4: GaitDev, F5: FacilityDev)
+  // Keyboard shortcut listener (F1: Telemetry, F2: Perf, F3: IKDev, F4: GaitDev, F5: FacilityDev)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F2') {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setIsTelemetryOpen((prev) => !prev);
+      } else if (e.key === 'F2') {
         e.preventDefault();
         setIsFrameTimeOpen((prev) => !prev);
       } else if (e.key === 'F3') {
@@ -240,6 +247,10 @@ export default function Home() {
             setIsGaitDevOpen(false);
           }
         }}
+        isTelemetryOpen={isTelemetryOpen}
+        onToggleTelemetry={() => setIsTelemetryOpen((prev) => !prev)}
+        isToolLogOpen={isToolLogOpen}
+        onToggleToolLog={() => setIsToolLogOpen((prev) => !prev)}
       />
 
       {/* Human Authority Gate Prominent HUD Banner (§3.3) */}
@@ -250,7 +261,7 @@ export default function Home() {
       />
 
       {/* Main 3D Viewport Subtree */}
-      <div className="w-full h-full pt-12">
+      <div className="w-full h-full pt-10">
         <Viewport
           pose={currentPose}
           stabilityState={currentStability}
@@ -258,10 +269,23 @@ export default function Home() {
           facilityData={facilityData}
           mechanismStates={mechanisms}
           unexploredFrontiers={unexploredFrontiers}
+          stagedProposal={stagedProposal}
           showTargetGizmos={isIkDevOpen}
           showSupportPolygon={true}
         />
       </div>
+
+      {/* Live 10Hz Telemetry Bus Readout Panel (§6, §7) */}
+      <TelemetryPanel
+        isOpen={isTelemetryOpen}
+        onClose={() => setIsTelemetryOpen(false)}
+      />
+
+      {/* Live WebMCP Tool Execution Audit Stream (§6, §7) */}
+      <ToolCallLog
+        isOpen={isToolLogOpen}
+        onClose={() => setIsToolLogOpen(false)}
+      />
 
       {/* Fallback Console & Interactive WebMCP Harness */}
       <FallbackConsole
