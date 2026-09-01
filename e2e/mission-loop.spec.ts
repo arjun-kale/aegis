@@ -25,10 +25,12 @@ test.describe('A.E.G.I.S mission loop via fallback console', () => {
     // Exercise the Phase 10 postprocessing quality toggle in a real
     // browser — Effects.tsx / @react-three/postprocessing has no other
     // coverage, and it's exactly the kind of GPU-pipeline code that fails
-    // silently or throws only at runtime, never at typecheck. Pass 1's
-    // header redesign demoted this to a small "FX" dev-tools button whose
-    // state is conveyed by aria-pressed, not by its label text.
-    const qualityToggle = page.getByRole('button', { name: 'FX', exact: true });
+    // silently or throws only at runtime, never at typecheck. Pass 3 gated
+    // this behind the "Dev" disclosure (freeing header width at 1280px);
+    // its items use role="menuitem" (proper menu semantics), not "button",
+    // and state is conveyed by aria-pressed, not by label text.
+    await page.getByRole('button', { name: 'Dev', exact: true }).click();
+    const qualityToggle = page.getByRole('menuitem', { name: 'QUALITY FX', exact: true });
     await expect(qualityToggle).toHaveAttribute('aria-pressed', 'false');
     await qualityToggle.click();
     await expect(qualityToggle).toHaveAttribute('aria-pressed', 'true');
@@ -39,6 +41,7 @@ test.describe('A.E.G.I.S mission loop via fallback console', () => {
     await expect(page.getByText('3D VIEWPORT RENDER FAILURE')).toHaveCount(0);
     await qualityToggle.click();
     await expect(qualityToggle).toHaveAttribute('aria-pressed', 'false');
+    await page.keyboard.press('Escape');
 
     // Open the fallback console — the Phase 0 dev harness that calls the
     // exact same execute() functions a WebMCP agent would.
