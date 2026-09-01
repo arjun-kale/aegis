@@ -233,9 +233,9 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
               )}
 
               {parsedPlan && (
-                <div className="p-3 bg-accent-teal/10 border border-accent-teal rounded space-y-2">
+                <div className="p-3 bg-accent-green/10 border border-accent-green rounded space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-accent-teal font-bold text-xs flex items-center gap-1.5">
+                    <span className="text-accent-green font-bold text-xs flex items-center gap-1.5">
                       <Check className="w-4 h-4" />
                       SCHEMA V1.0.0 VALIDATED
                     </span>
@@ -253,13 +253,13 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
                     </div>
                     <div className="p-1.5 bg-[#14171A] rounded border border-[#262B30]">
                       <div className="text-[#8E99A2]">GAIT:</div>
-                      <div className="font-semibold text-accent-teal">
+                      <div className="font-semibold text-accent-green">
                         {parsedPlan.mission_metadata.gait_profile}
                       </div>
                     </div>
                     <div className="p-1.5 bg-[#14171A] rounded border border-[#262B30]">
                       <div className="text-[#8E99A2]">MIN MARGIN:</div>
-                      <div className="font-semibold text-accent-teal">
+                      <div className="font-semibold text-accent-green">
                         {(parsedPlan.mission_metadata.predicted_min_margin * 100).toFixed(0)}%
                       </div>
                     </div>

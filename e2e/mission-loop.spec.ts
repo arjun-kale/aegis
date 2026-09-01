@@ -25,18 +25,20 @@ test.describe('A.E.G.I.S mission loop via fallback console', () => {
     // Exercise the Phase 10 postprocessing quality toggle in a real
     // browser — Effects.tsx / @react-three/postprocessing has no other
     // coverage, and it's exactly the kind of GPU-pipeline code that fails
-    // silently or throws only at runtime, never at typecheck.
-    const qualityToggle = page.getByRole('button', { name: /QUALITY:/ });
-    await expect(qualityToggle).toHaveText('QUALITY: PERF');
+    // silently or throws only at runtime, never at typecheck. Pass 1's
+    // header redesign demoted this to a small "FX" dev-tools button whose
+    // state is conveyed by aria-pressed, not by its label text.
+    const qualityToggle = page.getByRole('button', { name: 'FX', exact: true });
+    await expect(qualityToggle).toHaveAttribute('aria-pressed', 'false');
     await qualityToggle.click();
-    await expect(qualityToggle).toHaveText('QUALITY: HIGH');
+    await expect(qualityToggle).toHaveAttribute('aria-pressed', 'true');
     // Give the EffectComposer a moment to mount and render a frame; the
     // page must stay alive and interactive, not crash into the error
     // boundary or a blank tab.
     await page.waitForTimeout(500);
     await expect(page.getByText('3D VIEWPORT RENDER FAILURE')).toHaveCount(0);
     await qualityToggle.click();
-    await expect(qualityToggle).toHaveText('QUALITY: PERF');
+    await expect(qualityToggle).toHaveAttribute('aria-pressed', 'false');
 
     // Open the fallback console — the Phase 0 dev harness that calls the
     // exact same execute() functions a WebMCP agent would.
@@ -86,11 +88,13 @@ test.describe('A.E.G.I.S mission loop via fallback console', () => {
 
     // 5. Human Authority Gate — under the default MANUAL_APPROVAL policy,
     // motion cannot commit without this. Approve it as the operator.
-    const gate = page.getByRole('dialog', { name: 'Human Authority Gate' });
+    // Pass 1's redesign made this a fixed-height region (not a dialog) with
+    // a status badge that renders the raw approvalStatus enum as its text.
+    const gate = page.getByRole('region', { name: 'Human Authority Gate' });
     await expect(gate).toBeVisible();
     await expect(gate.getByText('PENDING_APPROVAL')).toBeVisible();
     await gate.getByRole('button', { name: 'Approve Route' }).click();
-    await expect(gate.getByText('ROUTE AUTHORIZED FOR EXECUTION')).toBeVisible();
+    await expect(gate.getByText('AUTHORIZED — awaiting execute_staged_proposal')).toBeVisible();
 
     // 6. execute_staged_proposal — the console auto-fills proposal_id from
     // the currently staged proposal. Strictly enforces the gate we just
@@ -100,6 +104,7 @@ test.describe('A.E.G.I.S mission loop via fallback console', () => {
     const executeResult = await invokeAndParse();
     expect(executeResult.status).toBe('EXECUTING');
 
-    await expect(gate.getByText('ROBOT EXECUTING STAGED TRAJECTORY...')).toBeVisible();
+    // EMERGENCY STOP only renders in the EXECUTING state — an unambiguous signal.
+    await expect(gate.getByRole('button', { name: 'EMERGENCY STOP' })).toBeVisible();
   });
 });

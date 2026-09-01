@@ -113,10 +113,11 @@ export function GhostTrajectory({ proposal }: GhostTrajectoryProps) {
 
   if (!proposal || allPoints.length < 2) return null;
 
-  // Margin color (Teal nominal, Amber cautionary, Red critical)
+  // Margin color (Green nominal, Amber cautionary, Red critical) — semantic
+  // status, kept distinct from the interactive/selection teal used elsewhere.
   const pathColor =
     proposal.predictedMinMargin >= 0.5
-      ? '#3E7C79'
+      ? '#2ECC71'
       : proposal.predictedMinMargin >= 0.3
       ? '#D98A2B'
       : '#C4472F';

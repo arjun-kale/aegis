@@ -154,7 +154,7 @@ export default function Viewport({
           cellColor="#262B30"
           sectionSize={5.0}
           sectionThickness={1.5}
-          sectionColor="#3E7C79"
+          sectionColor="#333A42"
           fadeDistance={45}
           fadeStrength={1.5}
         />
@@ -198,7 +198,9 @@ export default function Viewport({
           </mesh>
         ))}
 
-        {/* 2D Support Polygon & CoM Ground Projection (§1.3) */}
+        {/* 2D Support Polygon & CoM Ground Projection (§1.3).
+            Status color (safe/caution/critical) is semantic — green, not
+            teal, to keep teal reserved for interactive/selection state. */}
         {showSupportPolygon && stabilityState && (
           <group>
             {polygonPoints.length > 1 && (
@@ -206,7 +208,7 @@ export default function Viewport({
                 points={polygonPoints}
                 color={
                   stabilityState.stabilityMargin >= 0.6
-                    ? '#3E7C79'
+                    ? '#2ECC71'
                     : stabilityState.stabilityMargin >= 0.35
                     ? '#D98A2B'
                     : '#C4472F'
@@ -218,7 +220,7 @@ export default function Viewport({
             <mesh position={stabilityState.comGround}>
               <cylinderGeometry args={[0.05, 0.05, 0.01, 16]} />
               <meshBasicMaterial
-                color={stabilityState.isInsidePolygon ? '#3E7C79' : '#C4472F'}
+                color={stabilityState.isInsidePolygon ? '#2ECC71' : '#C4472F'}
               />
             </mesh>
           </group>

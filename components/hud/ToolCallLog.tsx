@@ -68,7 +68,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
             // Status color classification
             let statusBadge = 'bg-[#262B30] text-[#8E99A2]';
             if (entry.status === 'OK') {
-              statusBadge = 'bg-accent-teal/20 text-accent-teal border border-accent-teal/40';
+              statusBadge = 'bg-accent-green/20 text-accent-green border border-accent-green/40';
             } else if (entry.status === 'INFO') {
               statusBadge = 'bg-accent-amber/20 text-accent-amber border border-accent-amber/40';
             } else {
@@ -89,7 +89,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
                     <span className="font-semibold text-[#E8E3DA] truncate">{entry.title}</span>
                   </div>
                   {entry.status && (
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${statusBadge}`}>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${statusBadge}`}>
                       {entry.status}
                     </span>
                   )}

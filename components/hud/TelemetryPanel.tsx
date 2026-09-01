@@ -69,17 +69,19 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
   const stanceNames = ['DOUBLE_SUPPORT', 'LEFT_STANCE', 'RIGHT_STANCE', 'FLIGHT'];
   const currentStance = stanceNames[telemetry.stanceState] || 'UNKNOWN';
 
-  // Stability margin color classification (§7)
+  // Stability margin color classification (§7). Green = safe status,
+  // kept distinct from the interactive/selection teal used in the header
+  // and panel toggles — a repeated color should have exactly one job.
   const marginColor =
     telemetry.stabilityMargin >= 0.6
-      ? 'text-accent-teal'
+      ? 'text-accent-green'
       : telemetry.stabilityMargin >= 0.35
       ? 'text-accent-amber'
       : 'text-accent-red';
 
   const marginBgColor =
     telemetry.stabilityMargin >= 0.6
-      ? 'bg-accent-teal'
+      ? 'bg-accent-green'
       : telemetry.stabilityMargin >= 0.35
       ? 'bg-accent-amber'
       : 'bg-accent-red';
@@ -139,7 +141,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#262B30]">
           <div>
             <div className="text-[#8E99A2] text-[10px] uppercase">Stance State</div>
-            <div className="font-semibold text-accent-teal text-[11px] mt-0.5">{currentStance}</div>
+            <div className="font-semibold text-[#E8E3DA] text-[11px] mt-0.5">{currentStance}</div>
           </div>
           <div>
             <div className="text-[#8E99A2] text-[10px] uppercase">Torso World (m)</div>
@@ -163,7 +165,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
                   ? 'bg-accent-red'
                   : j.val >= 120
                   ? 'bg-accent-amber'
-                  : 'bg-accent-teal';
+                  : 'bg-accent-green';
 
               return (
                 <div key={j.name} className="flex items-center gap-2">
@@ -190,7 +192,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
             <div className="flex items-center gap-1.5">
               <div className="flex-1 bg-[#14171A] h-1.5 rounded overflow-hidden border border-[#262B30]">
                 <div
-                  className="bg-accent-teal h-full"
+                  className="bg-accent-green h-full"
                   style={{ width: `${batterySoc * 100}%` }}
                 />
               </div>
@@ -202,7 +204,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
             <div className="flex items-center gap-1.5">
               <div className="flex-1 bg-[#14171A] h-1.5 rounded overflow-hidden border border-[#262B30]">
                 <div
-                  className="bg-accent-teal h-full"
+                  className="bg-accent-green h-full"
                   style={{ width: `${thermalHeadroom * 100}%` }}
                 />
               </div>

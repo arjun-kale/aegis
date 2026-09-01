@@ -94,19 +94,22 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [stagedProposal, approvalStatus, isRejectOpen, approveProposal, clearProposal]);
 
+  // Green = safe status; kept distinct from the interactive/selection teal
+  // used for the autonomy toggle and Approve button below (§7.3 — a
+  // repeated color needs exactly one job).
   const margin = stagedProposal?.predictedMinMargin ?? 0;
   const marginColor =
-    margin >= 0.6 ? 'text-accent-teal' : margin >= 0.35 ? 'text-accent-amber' : 'text-accent-red';
+    margin >= 0.6 ? 'text-accent-green' : margin >= 0.35 ? 'text-accent-amber' : 'text-accent-red';
   const marginBarColor =
-    margin >= 0.6 ? 'bg-accent-teal' : margin >= 0.35 ? 'bg-accent-amber' : 'bg-accent-red';
+    margin >= 0.6 ? 'bg-accent-green' : margin >= 0.35 ? 'bg-accent-amber' : 'bg-accent-red';
 
   const statusBadge =
     approvalStatus === 'PENDING_APPROVAL'
       ? { icon: ShieldAlert, cls: 'text-accent-amber', bg: 'bg-accent-amber/15 border-accent-amber/40' }
       : approvalStatus === 'APPROVED'
-      ? { icon: ShieldCheck, cls: 'text-accent-teal', bg: 'bg-accent-teal/15 border-accent-teal/40' }
+      ? { icon: ShieldCheck, cls: 'text-accent-green', bg: 'bg-accent-green/15 border-accent-green/40' }
       : approvalStatus === 'EXECUTING'
-      ? { icon: Play, cls: 'text-accent-teal', bg: 'bg-accent-teal/15 border-accent-teal/40' }
+      ? { icon: Play, cls: 'text-accent-green', bg: 'bg-accent-green/15 border-accent-green/40' }
       : approvalStatus === 'REJECTED'
       ? { icon: AlertTriangle, cls: 'text-accent-red', bg: 'bg-accent-red/15 border-accent-red/40' }
       : null;
@@ -174,7 +177,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                 style={{ width: `${Math.max(0, Math.min(100, margin * 100))}%` }}
               />
             </div>
-            <span className={`font-semibold tabular-nums text-[11px] ${marginColor}`}>
+            <span className={`font-semibold tabular-nums text-sm ${marginColor}`}>
               {(margin * 100).toFixed(0)}%
             </span>
           </div>
@@ -245,7 +248,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           )}
 
           {approvalStatus === 'APPROVED' && (
-            <div className="text-accent-teal text-[11px] font-semibold shrink-0">
+            <div className="text-accent-green text-[11px] font-semibold shrink-0">
               AUTHORIZED — awaiting execute_staged_proposal
             </div>
           )}

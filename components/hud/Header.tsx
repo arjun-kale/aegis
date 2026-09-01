@@ -134,9 +134,9 @@ export function Header({
           </button>
         ) : (
           <div className="flex items-center gap-2 px-2.5 h-7 bg-[#14171A] border border-[#262B30] text-xs">
-            <Radio className={`w-3.5 h-3.5 ${hasWebMcp ? 'text-accent-teal animate-pulse' : 'text-[#8E99A2]'}`} />
+            <Radio className={`w-3.5 h-3.5 ${hasWebMcp ? 'text-accent-green animate-pulse' : 'text-[#8E99A2]'}`} />
             <span className="text-[#8E99A2]">WebMCP:</span>
-            <span className={`font-semibold ${hasWebMcp ? 'text-accent-teal' : 'text-[#8E99A2]'}`}>
+            <span className={`font-semibold ${hasWebMcp ? 'text-accent-green' : 'text-[#8E99A2]'}`}>
               {hasWebMcp === null ? 'DETECTING...' : `CONNECTED (${ACTIVE_TOOLS.length} TOOLS)`}
             </span>
           </div>

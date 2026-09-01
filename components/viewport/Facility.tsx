@@ -162,11 +162,11 @@ export function Facility({ geometryData, mechanismStates }: FacilityProps) {
               <mesh position={[0, 1.4, 0]} castShadow>
                 <boxGeometry args={[0.3, 2.8, isArmed ? 3.8 : 0.4]} />
                 <meshStandardMaterial
-                  color={isArmed ? '#262B30' : '#3E7C79'}
+                  color="#262B30"
                   roughness={0.4}
                   metalness={0.8}
                   emissive={isArmed ? '#C4472F' : '#2ECC71'}
-                  emissiveIntensity={0.2}
+                  emissiveIntensity={0.25}
                 />
               </mesh>
             </group>

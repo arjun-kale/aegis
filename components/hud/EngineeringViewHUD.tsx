@@ -170,7 +170,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
                   ? 'text-accent-red border-accent-red/40 bg-accent-red/10'
                   : stressRatio >= 0.5
                   ? 'text-accent-amber border-accent-amber/40 bg-accent-amber/10'
-                  : 'text-accent-teal border-accent-teal/40 bg-accent-teal/10';
+                  : 'text-accent-green border-accent-green/40 bg-accent-green/10';
 
               return (
                 <div
