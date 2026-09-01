@@ -52,7 +52,7 @@ function PanelButton({
       aria-label={label}
       className={`flex items-center gap-1.5 px-2.5 h-8 text-[11px] font-medium transition-colors border ${
         active
-          ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+          ? 'bg-[#14171A] border-accent-teal text-accent-tealText'
           : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#E8E3DA]'
       }`}
     >
@@ -168,7 +168,7 @@ export function Header({
             <span className="text-[#8E99A2]">WebMCP:</span>
             <span className="font-semibold text-accent-amber">FALLBACK_HARNESS</span>
             <span className="text-[10px] text-[#8E99A2] ml-1 underline">open console</span>
-            {!isSecure && <span className="text-[10px] text-accent-red ml-1">(INSECURE_ORIGIN)</span>}
+            {!isSecure && <span className="text-[10px] text-accent-redText ml-1">(INSECURE_ORIGIN)</span>}
           </button>
         ) : (
           <div className="flex items-center gap-2 px-2.5 h-7 bg-[#14171A] border border-[#262B30] text-xs">
@@ -252,7 +252,7 @@ export function Header({
             className={`flex items-center gap-1.5 px-2 h-8 text-[10px] font-medium tracking-wide transition-colors border ${
               isDevMenuOpen || leftDock === 'ik' || leftDock === 'gait' || leftDock === 'perf' || qualityMode === 'HIGH'
                 ? 'bg-accent-cyan/15 border-accent-cyan/50 text-accent-cyan'
-                : 'bg-transparent hover:bg-[#262B30] border-[#262B30] text-[#5C646D]'
+                : 'bg-transparent hover:bg-[#262B30] border-[#262B30] text-[#83898F]'
             }`}
           >
             <Wrench className="w-3 h-3" />

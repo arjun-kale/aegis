@@ -302,7 +302,7 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
             className="w-full flex-1 p-2.5 bg-[#0E1012] border border-surface-border rounded text-foreground font-mono text-xs focus:outline-none focus:border-accent-cyan transition-colors resize-none"
           />
           {jsonError && (
-            <div className="flex items-center gap-1.5 text-accent-red text-[11px]">
+            <div className="flex items-center gap-1.5 text-accent-redText text-[11px]">
               <AlertCircle className="w-3.5 h-3.5" />
               <span>{jsonError}</span>
             </div>
@@ -314,7 +314,7 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
           <button
             onClick={handleExecute}
             disabled={executing}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-semibold transition-colors disabled:opacity-50 text-xs"
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded bg-accent-teal hover:bg-accent-teal/80 text-white font-semibold transition-colors disabled:opacity-50 text-xs"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>{executing ? 'EXECUTING...' : 'INVOKE TOOL DIRECTLY'}</span>
@@ -333,7 +333,7 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
                 <span
                   className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
                     executionResult.isError
-                      ? 'bg-accent-red/20 text-accent-red border border-accent-red'
+                      ? 'bg-[#14171A] text-accent-redText border border-accent-red'
                       : 'bg-accent-green/20 text-accent-green border border-accent-green'
                   }`}
                 >

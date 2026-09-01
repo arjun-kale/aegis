@@ -54,7 +54,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
       {/* Log Feed */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {missionLog.length === 0 ? (
-          <div className="text-center py-8 text-[#5C646D] text-[11px]">
+          <div className="text-center py-8 text-[#83898F] text-[11px]">
             No WebMCP tools invoked yet.
             <div className="text-[10px] mt-1 text-[#8E99A2]">
               Trigger actions via WebMCP agent, Fallback Console, or HUD controls.
@@ -72,7 +72,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
             } else if (entry.status === 'INFO') {
               statusBadge = 'bg-accent-amber/20 text-accent-amber border border-accent-amber/40';
             } else {
-              statusBadge = 'bg-accent-red/20 text-accent-red border border-accent-red/40';
+              statusBadge = 'bg-[#14171A] text-accent-redText border border-accent-red';
             }
 
             return (
@@ -108,7 +108,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
                     <div className="text-[#8E99A2] uppercase tracking-wider text-[9px] mb-0.5">
                       Payload:
                     </div>
-                    <pre className="p-1.5 bg-[#181B1E] rounded border border-[#262B30] overflow-x-auto text-accent-teal">
+                    <pre className="p-1.5 bg-[#181B1E] rounded border border-[#262B30] overflow-x-auto text-accent-tealText">
                       {JSON.stringify(entry.payload, null, 2)}
                     </pre>
                   </div>

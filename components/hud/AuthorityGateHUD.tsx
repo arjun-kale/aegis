@@ -99,7 +99,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
   // repeated color needs exactly one job).
   const margin = stagedProposal?.predictedMinMargin ?? 0;
   const marginColor =
-    margin >= 0.6 ? 'text-accent-green' : margin >= 0.35 ? 'text-accent-amber' : 'text-accent-red';
+    margin >= 0.6 ? 'text-accent-green' : margin >= 0.35 ? 'text-accent-amber' : 'text-accent-redText';
   const marginBarColor =
     margin >= 0.6 ? 'bg-accent-green' : margin >= 0.35 ? 'bg-accent-amber' : 'bg-accent-red';
 
@@ -111,7 +111,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
       : approvalStatus === 'EXECUTING'
       ? { icon: Play, cls: 'text-accent-green', bg: 'bg-accent-green/15 border-accent-green/40' }
       : approvalStatus === 'REJECTED'
-      ? { icon: AlertTriangle, cls: 'text-accent-red', bg: 'bg-accent-red/15 border-accent-red/40' }
+      ? { icon: AlertTriangle, cls: 'text-accent-redText', bg: 'bg-[#14171A] border-accent-red' }
       : null;
 
   return (
@@ -139,12 +139,12 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
             <>
               <Unlock className="w-3.5 h-3.5 text-accent-teal" />
               <span className="text-[#8E99A2]">AUTHORITY GATE:</span>
-              <span className="font-semibold text-accent-teal">
+              <span className="font-semibold text-accent-tealText">
                 AUTO_SAFE (&gt;{safetyThreshold})
               </span>
             </>
           )}
-          <span className="text-[#5C646D] text-[10px]">— no motion commits without this</span>
+          <span className="text-[#83898F] text-[10px]">— no motion commits without this</span>
         </button>
       ) : (
         <>
@@ -163,7 +163,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
             <span className="text-[#E8E3DA] tabular-nums truncate">
               [{stagedProposal.targetWaypoint.x}, {stagedProposal.targetWaypoint.y}, {stagedProposal.targetWaypoint.z}]
             </span>
-            <span className="text-accent-teal font-semibold shrink-0">{stagedProposal.gaitProfile}</span>
+            <span className="text-accent-tealText font-semibold shrink-0">{stagedProposal.gaitProfile}</span>
             <span className="tabular-nums shrink-0">
               {stagedProposal.waypoints.length}pts · {stagedProposal.estimatedDurationSec}s
             </span>
@@ -189,7 +189,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
             <div className="flex items-center gap-2 shrink-0 relative">
               <button
                 onClick={approveProposal}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-teal hover:bg-accent-teal/80 text-[#14171A] font-bold transition-colors focus:ring-1 focus:ring-accent-teal"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-teal hover:bg-accent-teal/80 text-white font-bold transition-colors focus:ring-1 focus:ring-accent-teal"
                 aria-label="Approve Route"
               >
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -197,7 +197,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
               </button>
               <button
                 onClick={() => setIsRejectOpen((v) => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] font-bold transition-colors focus:ring-1 focus:ring-accent-red"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-red hover:bg-accent-red/80 text-white font-bold transition-colors focus:ring-1 focus:ring-accent-red"
                 aria-label="Reject Plan With Reason"
                 aria-expanded={isRejectOpen}
               >
@@ -212,7 +212,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                   role="dialog"
                   aria-label="Operator Rejection Feedback"
                 >
-                  <div className="text-accent-red font-semibold text-[11px]">
+                  <div className="text-accent-redText font-semibold text-[11px]">
                     OPERATOR REJECTION FEEDBACK
                   </div>
                   <select
@@ -238,7 +238,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                       rejectProposal(customReason);
                       setIsRejectOpen(false);
                     }}
-                    className="w-full py-2 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] font-bold text-xs"
+                    className="w-full py-2 bg-accent-red hover:bg-accent-red/80 text-white font-bold text-xs"
                   >
                     CONFIRM REJECTION & TRANSMIT TO AGENT
                   </button>
@@ -262,7 +262,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           {approvalStatus === 'EXECUTING' && onAbortExecution && (
             <button
               onClick={onAbortExecution}
-              className="px-3 py-1.5 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] text-[11px] font-bold shrink-0"
+              className="px-3 py-1.5 bg-accent-red hover:bg-accent-red/80 text-white text-[11px] font-bold shrink-0"
             >
               EMERGENCY STOP
             </button>

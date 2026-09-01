@@ -77,7 +77,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
       ? 'text-accent-green'
       : telemetry.stabilityMargin >= 0.35
       ? 'text-accent-amber'
-      : 'text-accent-red';
+      : 'text-accent-redText';
 
   const marginBgColor =
     telemetry.stabilityMargin >= 0.6
@@ -155,7 +155,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         <div className="pt-1 border-t border-[#262B30]">
           <div className="text-[#8E99A2] text-[10px] uppercase mb-1.5 flex justify-between">
             <span>Joint Torque Loads (N·m)</span>
-            <span className="text-[#5C646D]">Max: 220 N·m</span>
+            <span className="text-[#83898F]">Max: 220 N·m</span>
           </div>
           <div className="space-y-1.5">
             {joints.map((j) => {
@@ -216,7 +216,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         {/* 5. Active Faults List */}
         {activeFaults.length > 0 && (
           <div className="pt-1 border-t border-[#262B30]">
-            <div className="text-accent-red text-[10px] uppercase font-semibold mb-1 flex items-center gap-1">
+            <div className="text-accent-redText text-[10px] uppercase font-semibold mb-1 flex items-center gap-1">
               <span>⚠ ACTIVE ALERTS ({activeFaults.length})</span>
             </div>
             <ul className="text-[10px] text-[#E8E3DA] space-y-0.5 list-disc list-inside">

@@ -18,7 +18,7 @@ export function FpsCounter() {
       ? 'text-accent-green'
       : currentFps >= 30
       ? 'text-accent-amber'
-      : 'text-accent-red';
+      : 'text-accent-redText';
 
   return (
     <div className="flex items-center gap-3 px-3 py-1.5 rounded bg-surface/80 border border-surface-border text-xs font-mono select-none">

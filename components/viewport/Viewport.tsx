@@ -101,7 +101,7 @@ export default function Viewport({
           </div>
           <button
             onClick={handleReloadCanvas}
-            className="flex items-center gap-2 px-4 py-2 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-semibold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded bg-accent-teal hover:bg-accent-teal/80 text-white font-semibold transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>RELOAD CANVAS</span>

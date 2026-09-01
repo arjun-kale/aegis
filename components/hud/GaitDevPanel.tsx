@@ -61,7 +61,7 @@ export function GaitDevPanel({
       ? 'text-accent-green'
       : margin >= 0.4
       ? 'text-accent-amber'
-      : 'text-accent-red';
+      : 'text-accent-redText';
 
   const marginBgColor =
     margin >= 0.6
@@ -173,7 +173,7 @@ export function GaitDevPanel({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={onTogglePlay}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-bold text-xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-accent-teal hover:bg-accent-teal/80 text-white font-bold text-xs"
               >
                 {isPlaying ? (
                   <>

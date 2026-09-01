@@ -102,7 +102,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
             <span className="text-[#8E99A2] uppercase tracking-wider">
               Disassembly Expansion Factor:
             </span>
-            <span className="font-semibold tabular-nums text-accent-teal">
+            <span className="font-semibold tabular-nums text-accent-tealText">
               {(disassemblyFactor * 100).toFixed(0)}%
             </span>
           </div>
@@ -123,7 +123,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
               onClick={() => setDisassemblyFactor(0.0)}
               className={`py-1 rounded border text-[10px] font-semibold transition-colors ${
                 disassemblyFactor === 0
-                  ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+                  ? 'bg-[#14171A] border-accent-teal text-accent-tealText'
                   : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#8E99A2]'
               }`}
             >
@@ -133,7 +133,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
               onClick={() => setDisassemblyFactor(0.5)}
               className={`py-1 rounded border text-[10px] font-semibold transition-colors ${
                 disassemblyFactor === 0.5
-                  ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+                  ? 'bg-[#14171A] border-accent-teal text-accent-tealText'
                   : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#8E99A2]'
               }`}
             >
@@ -143,7 +143,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
               onClick={() => setDisassemblyFactor(1.0)}
               className={`py-1 rounded border text-[10px] font-semibold transition-colors ${
                 disassemblyFactor === 1.0
-                  ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+                  ? 'bg-[#14171A] border-accent-teal text-accent-tealText'
                   : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#8E99A2]'
               }`}
             >
@@ -156,7 +156,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
         <div className="pt-2 border-t border-[#262B30]">
           <div className="text-[#8E99A2] text-[10px] uppercase mb-1.5 flex justify-between">
             <span>Subsystem Stress & Thermal Telemetry</span>
-            <span className="text-accent-teal flex items-center gap-1">
+            <span className="text-accent-tealText flex items-center gap-1">
               <Zap className="w-3 h-3" />
               LIVE TELEMETRY
             </span>
@@ -167,7 +167,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
               const stressRatio = sub.load / sub.rated;
               const badgeClass =
                 stressRatio >= 0.8
-                  ? 'text-accent-red border-accent-red/40 bg-accent-red/10'
+                  ? 'text-accent-redText border-accent-red bg-[#14171A]'
                   : stressRatio >= 0.5
                   ? 'text-accent-amber border-accent-amber/40 bg-accent-amber/10'
                   : 'text-accent-green border-accent-green/40 bg-accent-green/10';

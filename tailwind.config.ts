@@ -25,7 +25,15 @@ const config: Config = {
         accent: {
           amber: '#D98A2B',
           red: '#C4472F',
+          // WCAG AA text-safe variant of `red` (4.55:1 on #1E2226 vs 3.27:1
+          // for the base color). Use for readable text; keep `red` for
+          // fills/borders/bars, which only need the 3:1 non-text threshold
+          // and already clear it.
+          redText: '#D06C59',
           teal: '#3E7C79',
+          // WCAG AA text-safe variant of `teal` (4.50:1 on #1E2226 vs
+          // 3.33:1 for the base color). Same rule as redText above.
+          tealText: '#5D918E',
           cyan: '#00E5FF',
           green: '#2ECC71',
         },

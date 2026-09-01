@@ -159,7 +159,7 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           {df >= 0.25 && (
             <Html position={[0, 0.22, 0]} center distanceFactor={12}>
               <div className="bg-[#14171A]/90 border border-[#262B30] text-[#E8E3DA] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
-                <span className="text-accent-teal font-bold">LIDAR / OPTICS</span> [75°C]
+                <span className="text-accent-tealText font-bold">LIDAR / OPTICS</span> [75°C]
               </div>
             </Html>
           )}

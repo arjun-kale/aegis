@@ -137,7 +137,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
             onClick={() => setActiveTab('export')}
             className={`flex-1 py-2 flex items-center justify-center gap-2 font-semibold text-xs border-r border-[#262B30] transition-colors ${
               activeTab === 'export'
-                ? 'bg-[#1E2226] text-accent-teal border-b-2 border-b-accent-teal'
+                ? 'bg-[#1E2226] text-accent-tealText border-b-2 border-b-accent-teal'
                 : 'text-[#8E99A2] hover:text-[#E8E3DA]'
             }`}
           >
@@ -148,7 +148,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
             onClick={() => setActiveTab('import')}
             className={`flex-1 py-2 flex items-center justify-center gap-2 font-semibold text-xs transition-colors ${
               activeTab === 'import'
-                ? 'bg-[#1E2226] text-accent-teal border-b-2 border-b-accent-teal'
+                ? 'bg-[#1E2226] text-accent-tealText border-b-2 border-b-accent-teal'
                 : 'text-[#8E99A2] hover:text-[#E8E3DA]'
             }`}
           >
@@ -164,7 +164,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-[#8E99A2]">
                   Seed {facilitySeed} • {currentExportPlan.waypoints.length} Waypoints • Gait:{' '}
-                  <span className="text-accent-teal font-semibold">
+                  <span className="text-accent-tealText font-semibold">
                     {currentExportPlan.mission_metadata.gait_profile}
                   </span>
                 </span>
@@ -178,7 +178,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
                   </button>
                   <button
                     onClick={handleDownload}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-accent-teal hover:bg-accent-teal/80 text-[#14171A] font-bold text-[10px] rounded transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-accent-teal hover:bg-accent-teal/80 text-white font-bold text-[10px] rounded transition-colors"
                   >
                     <Download className="w-3 h-3 stroke-[2.5]" />
                     <span>DOWNLOAD .JSON</span>
@@ -187,7 +187,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
               </div>
 
               {/* Formatted Code Block */}
-              <pre className="p-3 bg-[#14171A] border border-[#262B30] rounded text-[10px] text-accent-teal max-h-80 overflow-y-auto leading-relaxed">
+              <pre className="p-3 bg-[#14171A] border border-[#262B30] rounded text-[10px] text-accent-tealText max-h-80 overflow-y-auto leading-relaxed">
                 {JSON.stringify(currentExportPlan, null, 2)}
               </pre>
             </div>
@@ -226,7 +226,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
 
               {/* Validation Status Error / Success */}
               {importError && (
-                <div className="p-2.5 bg-accent-red/10 border border-accent-red text-accent-red text-[11px] rounded flex items-center gap-2">
+                <div className="p-2.5 bg-[#14171A] border border-accent-red text-accent-redText text-[11px] rounded flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{importError}</span>
                 </div>
@@ -267,7 +267,7 @@ export function MissionExportModal({ isOpen, onClose, onReplayPlan }: MissionExp
 
                   <button
                     onClick={handleExecuteReplay}
-                    className="w-full mt-2 py-2.5 bg-accent-teal hover:bg-accent-teal/80 text-[#14171A] font-bold text-xs rounded flex items-center justify-center gap-2 transition-colors"
+                    className="w-full mt-2 py-2.5 bg-accent-teal hover:bg-accent-teal/80 text-white font-bold text-xs rounded flex items-center justify-center gap-2 transition-colors"
                   >
                     <Play className="w-4 h-4 fill-current" />
                     <span>LOAD & REPLAY PLAN ON SEED {parsedPlan.facility_seed}</span>

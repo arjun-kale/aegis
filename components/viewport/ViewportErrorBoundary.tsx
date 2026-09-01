@@ -45,7 +45,7 @@ export class ViewportErrorBoundary extends React.Component<
         <div className="flex flex-col items-center justify-center gap-4 w-full h-full bg-[#14171A] text-foreground font-mono text-xs px-6 text-center">
           <AlertTriangle className="w-8 h-8 text-accent-red" />
           <div className="max-w-md space-y-1.5">
-            <div className="text-sm font-semibold text-accent-red">
+            <div className="text-sm font-semibold text-accent-redText">
               3D VIEWPORT RENDER FAILURE
             </div>
             <p className="text-foreground-muted leading-relaxed">
@@ -59,7 +59,7 @@ export class ViewportErrorBoundary extends React.Component<
           </div>
           <button
             onClick={this.handleReset}
-            className="flex items-center gap-2 px-4 py-2 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-semibold transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded bg-accent-teal hover:bg-accent-teal/80 text-white font-semibold transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>RESET VIEWPORT</span>

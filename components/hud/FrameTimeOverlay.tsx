@@ -172,7 +172,7 @@ export function FrameTimeOverlay({ isOpen, onClose }: FrameTimeOverlayProps) {
             <div className="text-foreground-muted">MAX:</div>
             <div
               className={`font-semibold ${
-                stats.max > 18 ? 'text-accent-red' : 'text-foreground'
+                stats.max > 18 ? 'text-accent-redText' : 'text-foreground'
               }`}
             >
               {stats.max}ms
