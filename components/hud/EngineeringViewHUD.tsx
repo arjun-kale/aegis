@@ -71,7 +71,7 @@ export function EngineeringViewHUD({ isOpen, onClose }: EngineeringViewHUDProps)
 
   return (
     <div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[480px] max-w-[calc(100vw-32px)] bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl select-none flex flex-col"
+      className="fixed right-4 top-[100px] bottom-4 z-30 w-[400px] max-w-[calc(100vw-32px)] bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl select-none flex flex-col"
       role="region"
       aria-label="Exploded Engineering View Controller"
     >

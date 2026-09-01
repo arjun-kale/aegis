@@ -21,7 +21,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-30 w-96 max-h-[75vh] bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl flex flex-col"
+      className="fixed right-4 top-[100px] bottom-4 z-30 w-[400px] max-w-[calc(100vw-32px)] bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl flex flex-col"
       role="region"
       aria-label="WebMCP Tool Execution Stream"
     >
@@ -52,7 +52,7 @@ export function ToolCallLog({ isOpen, onClose }: ToolCallLogProps) {
       </div>
 
       {/* Log Feed */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 max-h-[60vh]">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {missionLog.length === 0 ? (
           <div className="text-center py-8 text-[#5C646D] text-[11px]">
             No WebMCP tools invoked yet.

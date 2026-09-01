@@ -32,6 +32,10 @@ import { performSpatialScan } from '@/lib/world/exploration';
 import { applyMechanismCommand, getMechanismColliders } from '@/lib/world/mechanisms';
 import { useMissionStore } from '@/lib/state/missionStore';
 
+// Pass 1 layout redesign: shared dock-panel identifiers (see Header.tsx).
+export type LeftDockPanel = 'telemetry' | 'ik' | 'gait' | 'perf' | null;
+export type RightDockPanel = 'toolstream' | 'facility' | 'exploded' | 'console' | null;
+
 // Dynamic client import with ssr: false
 const Viewport = dynamic(() => import('@/components/viewport/Viewport'), {
   ssr: false,
@@ -44,15 +48,18 @@ const Viewport = dynamic(() => import('@/components/viewport/Viewport'), {
 });
 
 export default function Home() {
-  const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
-  const [isFrameTimeOpen, setIsFrameTimeOpen] = useState<boolean>(false);
-  const [isIkDevOpen, setIsIkDevOpen] = useState<boolean>(false);
-  const [isGaitDevOpen, setIsGaitDevOpen] = useState<boolean>(false);
-  const [isFacilityDevOpen, setIsFacilityDevOpen] = useState<boolean>(false);
-  const [isTelemetryOpen, setIsTelemetryOpen] = useState<boolean>(true);
-  const [isToolLogOpen, setIsToolLogOpen] = useState<boolean>(false);
-  const [isEngineeringViewOpen, setIsEngineeringViewOpen] = useState<boolean>(false);
+  // Pass 1 layout redesign: two docked regions (left/right) each hold one
+  // panel at a time instead of nine independently-positioned floating
+  // panels with ad-hoc mutual exclusion. Left holds the always-useful
+  // Telemetry plus the dev-only tuning harnesses (IK/Gait/Perf); right
+  // holds the always-useful Tool Stream plus the operator-facing Facility
+  // Workbench, Exploded View, and Fallback Console.
+  const [leftDock, setLeftDock] = useState<LeftDockPanel>('telemetry');
+  const [rightDock, setRightDock] = useState<RightDockPanel>('toolstream');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+
+  const isIkDevOpen = leftDock === 'ik';
+  const isGaitDevOpen = leftDock === 'gait';
 
   // Facility & Store State
   const facilitySeed = useMissionStore((state) => state.facilitySeed);
@@ -218,7 +225,20 @@ export default function Home() {
   // silently: when no WebMCP agent context is present (unsupported browser,
   // or a non-secure origin), record it in the audit log so the operator
   // sees why the console starts in fallback mode instead of guessing.
+  //
+  // The "Workbench Initialized" entry is seeded here (client-only, post-mount)
+  // rather than as static missionStore initial state — a Date.now() value
+  // baked into module-eval-time state would differ between the SSR pass and
+  // client hydration, producing a text-content hydration mismatch.
   useEffect(() => {
+    useMissionStore.getState().addLogEntry({
+      type: 'SYSTEM',
+      source: 'SYSTEM',
+      title: 'Workbench Initialized',
+      detail: `Facility loaded with seed ${useMissionStore.getState().facilitySeed}. Human approval gate active.`,
+      status: 'INFO',
+    });
+
     const mc = resolveModelContext();
     if (!mc) {
       useMissionStore.getState().addLogEntry({
@@ -238,27 +258,27 @@ export default function Home() {
     };
   }, []);
 
-  // Keyboard shortcut listener (F1: Telemetry, F2: Perf, F3: IKDev, F4: GaitDev, F5: FacilityDev)
+  // Keyboard shortcut listener (F1: Telemetry, F2: Perf, F3: IKDev, F4: GaitDev, F5: FacilityDev, F6: Exploded, F7: Export)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F1') {
         e.preventDefault();
-        setIsTelemetryOpen((prev) => !prev);
+        setLeftDock((prev) => (prev === 'telemetry' ? null : 'telemetry'));
       } else if (e.key === 'F2') {
         e.preventDefault();
-        setIsFrameTimeOpen((prev) => !prev);
+        setLeftDock((prev) => (prev === 'perf' ? null : 'perf'));
       } else if (e.key === 'F3') {
         e.preventDefault();
-        setIsIkDevOpen((prev) => !prev);
+        setLeftDock((prev) => (prev === 'ik' ? null : 'ik'));
       } else if (e.key === 'F4') {
         e.preventDefault();
-        setIsGaitDevOpen((prev) => !prev);
+        setLeftDock((prev) => (prev === 'gait' ? null : 'gait'));
       } else if (e.key === 'F5') {
         e.preventDefault();
-        setIsFacilityDevOpen((prev) => !prev);
+        setRightDock((prev) => (prev === 'facility' ? null : 'facility'));
       } else if (e.key === 'F6') {
         e.preventDefault();
-        setIsEngineeringViewOpen((prev) => !prev);
+        setRightDock((prev) => (prev === 'exploded' ? null : 'exploded'));
       } else if (e.key === 'F7') {
         e.preventDefault();
         setIsExportModalOpen((prev) => !prev);
@@ -269,56 +289,28 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#14171A]">
-      {/* Top Mission HUD Header */}
+    <main className="relative w-screen h-screen overflow-hidden bg-[#14171A] flex flex-col">
+      {/* Top Mission HUD Header — fixed height, in normal flow (Pass 1) */}
       <Header
-        isConsoleOpen={isConsoleOpen}
-        onToggleConsole={() => setIsConsoleOpen((prev) => !prev)}
-        isFrameTimeOpen={isFrameTimeOpen}
-        onToggleFrameTime={() => setIsFrameTimeOpen((prev) => !prev)}
-        isIkDevOpen={isIkDevOpen}
-        onToggleIkDev={() => {
-          setIsIkDevOpen((prev) => !prev);
-          if (!isIkDevOpen) {
-            setIsGaitDevOpen(false);
-            setIsFacilityDevOpen(false);
-          }
-        }}
-        isGaitDevOpen={isGaitDevOpen}
-        onToggleGaitDev={() => {
-          setIsGaitDevOpen((prev) => !prev);
-          if (!isGaitDevOpen) {
-            setIsIkDevOpen(false);
-            setIsFacilityDevOpen(false);
-          }
-        }}
-        isFacilityDevOpen={isFacilityDevOpen}
-        onToggleFacilityDev={() => {
-          setIsFacilityDevOpen((prev) => !prev);
-          if (!isFacilityDevOpen) {
-            setIsIkDevOpen(false);
-            setIsGaitDevOpen(false);
-          }
-        }}
-        isTelemetryOpen={isTelemetryOpen}
-        onToggleTelemetry={() => setIsTelemetryOpen((prev) => !prev)}
-        isToolLogOpen={isToolLogOpen}
-        onToggleToolLog={() => setIsToolLogOpen((prev) => !prev)}
-        isEngineeringViewOpen={isEngineeringViewOpen}
-        onToggleEngineeringView={() => setIsEngineeringViewOpen((prev) => !prev)}
+        leftDock={leftDock}
+        onSetLeftDock={setLeftDock}
+        rightDock={rightDock}
+        onSetRightDock={setRightDock}
         isExportModalOpen={isExportModalOpen}
         onToggleExportModal={() => setIsExportModalOpen((prev) => !prev)}
       />
 
-      {/* Human Authority Gate Prominent HUD Banner (§3.3) */}
+      {/* Human Authority Gate — fixed-height bar, in normal flow (Pass 1).
+          The single most safety-critical surface now occupies a constant,
+          unmistakable position directly under the header, in every state. */}
       <AuthorityGateHUD
         onAbortExecution={() => {
           setApprovalStatus('REJECTED', 'Operator Emergency Abort');
         }}
       />
 
-      {/* Main 3D Viewport Subtree */}
-      <div className="w-full h-full pt-10">
+      {/* Main 3D Viewport Subtree — fills all remaining space */}
+      <div className="relative flex-1 min-h-0">
         <ViewportErrorBoundary>
           <Viewport
             pose={currentPose}
@@ -332,9 +324,62 @@ export default function Home() {
             showSupportPolygon={true}
           />
         </ViewportErrorBoundary>
+
+        {/* Left dock — Telemetry (default) or a dev tuning harness, one at a time */}
+        <TelemetryPanel isOpen={leftDock === 'telemetry'} onClose={() => setLeftDock(null)} />
+        <IkDevPanel
+          isOpen={leftDock === 'ik'}
+          onClose={() => setLeftDock(null)}
+          targets={manualTargets}
+          onChangeTargets={setManualTargets}
+          currentPose={manualPose.kinematicState}
+        />
+        <GaitDevPanel
+          isOpen={leftDock === 'gait'}
+          onClose={() => setLeftDock(null)}
+          selectedProfile={gaitProfile}
+          onSelectProfile={setGaitProfile}
+          selectedPathKey={selectedPathKey}
+          onSelectPathKey={(key) => {
+            setSelectedPathKey(key);
+            setElapsedSimTime(0);
+          }}
+          isPlaying={isPlaying}
+          onTogglePlay={() => setIsPlaying((prev) => !prev)}
+          onReset={() => {
+            setIsPlaying(false);
+            setElapsedSimTime(0);
+          }}
+          onStepForward={() => setElapsedSimTime((prev) => prev + 0.1)}
+          playbackSpeed={playbackSpeed}
+          onChangeSpeed={setPlaybackSpeed}
+          stabilityResult={locomotionResult.stabilityState}
+          progressM={locomotionResult.progressM}
+          totalDistanceM={locomotionResult.totalDistanceM}
+        />
+        <FrameTimeOverlay isOpen={leftDock === 'perf'} onClose={() => setLeftDock(null)} />
+
+        {/* Right dock — Tool Stream (default), Facility, Exploded View, or Console, one at a time */}
+        <ToolCallLog isOpen={rightDock === 'toolstream'} onClose={() => setRightDock(null)} />
+        <FacilityDevPanel
+          isOpen={rightDock === 'facility'}
+          onClose={() => setRightDock(null)}
+          seed={facilitySeed}
+          onChangeSeed={setFacilitySeed}
+          mechanisms={mechanisms}
+          onToggleMechanism={handleToggleMechanism}
+          navPathResult={navPathResult}
+          selectedNavTargetName={navTargetKey}
+          onSelectNavTarget={setNavTargetKey}
+          onTriggerScan={handleTriggerScan}
+          scannedCellsCount={scannedCellsCount}
+          unexploredFrontiersCount={unexploredFrontiers.length}
+        />
+        <EngineeringViewHUD isOpen={rightDock === 'exploded'} onClose={() => setRightDock(null)} />
+        <FallbackConsole isOpen={rightDock === 'console'} onClose={() => setRightDock(null)} />
       </div>
 
-      {/* Mission Plan Export & Replay Modal (§9) */}
+      {/* Mission Plan Export & Replay Modal (§9) — a true modal, unaffected by dock layout */}
       <MissionExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
@@ -342,86 +387,6 @@ export default function Home() {
           setIsPlaying(true);
           setElapsedSimTime(0);
         }}
-      />
-
-      {/* Exploded Engineering View Controller (§8) */}
-      <EngineeringViewHUD
-        isOpen={isEngineeringViewOpen}
-        onClose={() => setIsEngineeringViewOpen(false)}
-      />
-
-      {/* Live 10Hz Telemetry Bus Readout Panel (§6, §7) */}
-      <TelemetryPanel
-        isOpen={isTelemetryOpen}
-        onClose={() => setIsTelemetryOpen(false)}
-      />
-
-      {/* Live WebMCP Tool Execution Audit Stream (§6, §7) */}
-      <ToolCallLog
-        isOpen={isToolLogOpen}
-        onClose={() => setIsToolLogOpen(false)}
-      />
-
-      {/* Fallback Console & Interactive WebMCP Harness */}
-      <FallbackConsole
-        isOpen={isConsoleOpen}
-        onClose={() => setIsConsoleOpen(false)}
-      />
-
-      {/* Dev-only Frame Time & Latency Sparkline */}
-      <FrameTimeOverlay
-        isOpen={isFrameTimeOpen}
-        onClose={() => setIsFrameTimeOpen(false)}
-      />
-
-      {/* IK Rig Dev Panel */}
-      <IkDevPanel
-        isOpen={isIkDevOpen}
-        onClose={() => setIsIkDevOpen(false)}
-        targets={manualTargets}
-        onChangeTargets={setManualTargets}
-        currentPose={manualPose.kinematicState}
-      />
-
-      {/* Locomotion & Gait Bench Panel */}
-      <GaitDevPanel
-        isOpen={isGaitDevOpen}
-        onClose={() => setIsGaitDevOpen(false)}
-        selectedProfile={gaitProfile}
-        onSelectProfile={setGaitProfile}
-        selectedPathKey={selectedPathKey}
-        onSelectPathKey={(key) => {
-          setSelectedPathKey(key);
-          setElapsedSimTime(0);
-        }}
-        isPlaying={isPlaying}
-        onTogglePlay={() => setIsPlaying((prev) => !prev)}
-        onReset={() => {
-          setIsPlaying(false);
-          setElapsedSimTime(0);
-        }}
-        onStepForward={() => setElapsedSimTime((prev) => prev + 0.1)}
-        playbackSpeed={playbackSpeed}
-        onChangeSpeed={setPlaybackSpeed}
-        stabilityResult={locomotionResult.stabilityState}
-        progressM={locomotionResult.progressM}
-        totalDistanceM={locomotionResult.totalDistanceM}
-      />
-
-      {/* Facility & Navigation Workbench Panel */}
-      <FacilityDevPanel
-        isOpen={isFacilityDevOpen}
-        onClose={() => setIsFacilityDevOpen(false)}
-        seed={facilitySeed}
-        onChangeSeed={setFacilitySeed}
-        mechanisms={mechanisms}
-        onToggleMechanism={handleToggleMechanism}
-        navPathResult={navPathResult}
-        selectedNavTargetName={navTargetKey}
-        onSelectNavTarget={setNavTargetKey}
-        onTriggerScan={handleTriggerScan}
-        scannedCellsCount={scannedCellsCount}
-        unexploredFrontiersCount={unexploredFrontiers.length}
       />
     </main>
   );

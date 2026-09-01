@@ -115,7 +115,7 @@ export default function Viewport({
     <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
       <Canvas
         key={canvasKey}
-        camera={{ position: [8, 12, 18], fov: 45 }}
+        camera={{ position: [4, 3.2, 6], fov: 45 }}
         shadows
         dpr={[1, 2]}
         gl={{
@@ -126,19 +126,22 @@ export default function Viewport({
       >
         <color attach="background" args={['#14171A']} />
 
-        {/* Studio & Facility Lighting */}
-        <ambientLight intensity={0.45} />
+        {/* Studio & Facility Lighting — key + fill + a close rim light so the
+            robot (the actual subject) reads clearly at the default framing,
+            rather than disappearing into the dark facility around it. */}
+        <ambientLight intensity={0.65} />
+        <pointLight position={[0.5, 2.6, 1.8]} intensity={0.55} color="#E8E3DA" distance={9} decay={2} />
         <directionalLight
-          position={[12, 22, 14]}
-          intensity={1.5}
+          position={[6, 10, 6]}
+          intensity={2.1}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-bias={-0.0001}
         />
         <directionalLight
-          position={[-12, 14, -8]}
-          intensity={0.4}
+          position={[-8, 6, -4]}
+          intensity={0.65}
           color="#3E7C79"
         />
 
@@ -259,7 +262,7 @@ function CameraRig({ targetPos }: { targetPos: [number, number, number] }) {
       dampingFactor={0.08}
       minDistance={1.2}
       maxDistance={50}
-      target={[4, 1.2, 6]}
+      target={[0, 0.9, 0]}
       maxPolarAngle={Math.PI / 2 - 0.02}
     />
   );

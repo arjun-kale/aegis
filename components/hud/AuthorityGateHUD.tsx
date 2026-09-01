@@ -1,15 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMissionStore } from '@/lib/state/missionStore';
 import {
   ShieldCheck,
   ShieldAlert,
   Check,
   X,
-  Footprints,
-  Clock,
-  Navigation,
   Lock,
   Unlock,
   AlertTriangle,
@@ -27,6 +24,17 @@ const COMMON_REJECTION_REASONS = [
   'Route crosses unverified or occluded sector',
 ];
 
+/**
+ * Human Authority Gate (§3.3) — Pass 1 layout redesign.
+ *
+ * Previously a floating, variable-height pill/card centered independently
+ * of the header. Now a fixed-height (h-14) full-width bar directly under
+ * the header, in normal document flow — the single most safety-critical
+ * surface in the product (nothing moves without this) now occupies a
+ * constant, unmistakable position regardless of state, instead of growing
+ * and shifting. The reject-reason form is a popover that doesn't change
+ * the bar's height.
+ */
 export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
   const stagedProposal = useMissionStore((state) => state.stagedProposal);
   const approvalStatus = useMissionStore((state) => state.approvalStatus);
@@ -41,19 +49,29 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
 
   const [isRejectOpen, setIsRejectOpen] = useState<boolean>(false);
   const [customReason, setCustomReason] = useState<string>(COMMON_REJECTION_REASONS[0]);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard shortcut listener (§6, §7): [A] / [Enter] -> Approve, [R] -> Reject modal, [Esc] -> Dismiss/Cancel
+  // Close the reject popover on outside click.
+  useEffect(() => {
+    if (!isRejectOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsRejectOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClick);
+    return () => window.removeEventListener('mousedown', handleClick);
+  }, [isRejectOpen]);
+
+  // Keyboard shortcut listener (§6, §7): [A] / [Enter] -> Approve, [R] -> Reject popover, [Esc] -> Dismiss/Cancel
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept when user is typing in an input/textarea/select
       if (
         document.activeElement instanceof HTMLInputElement ||
         document.activeElement instanceof HTMLTextAreaElement ||
         document.activeElement instanceof HTMLSelectElement
       ) {
-        if (e.key === 'Escape') {
-          setIsRejectOpen(false);
-        }
+        if (e.key === 'Escape') setIsRejectOpen(false);
         return;
       }
 
@@ -66,11 +84,8 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           setIsRejectOpen(true);
         } else if (e.key === 'Escape') {
           e.preventDefault();
-          if (isRejectOpen) {
-            setIsRejectOpen(false);
-          } else {
-            clearProposal();
-          }
+          if (isRejectOpen) setIsRejectOpen(false);
+          else clearProposal();
         }
       }
     };
@@ -79,191 +94,124 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [stagedProposal, approvalStatus, isRejectOpen, approveProposal, clearProposal]);
 
-  if (!stagedProposal && approvalStatus === 'IDLE') {
-    // Compact Autonomy Policy Pill
-    return (
-      <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1 bg-[#1E2226] border border-[#262B30] text-xs font-mono select-none shadow-md">
+  const margin = stagedProposal?.predictedMinMargin ?? 0;
+  const marginColor =
+    margin >= 0.6 ? 'text-accent-teal' : margin >= 0.35 ? 'text-accent-amber' : 'text-accent-red';
+  const marginBarColor =
+    margin >= 0.6 ? 'bg-accent-teal' : margin >= 0.35 ? 'bg-accent-amber' : 'bg-accent-red';
+
+  const statusBadge =
+    approvalStatus === 'PENDING_APPROVAL'
+      ? { icon: ShieldAlert, cls: 'text-accent-amber', bg: 'bg-accent-amber/15 border-accent-amber/40' }
+      : approvalStatus === 'APPROVED'
+      ? { icon: ShieldCheck, cls: 'text-accent-teal', bg: 'bg-accent-teal/15 border-accent-teal/40' }
+      : approvalStatus === 'EXECUTING'
+      ? { icon: Play, cls: 'text-accent-teal', bg: 'bg-accent-teal/15 border-accent-teal/40' }
+      : approvalStatus === 'REJECTED'
+      ? { icon: AlertTriangle, cls: 'text-accent-red', bg: 'bg-accent-red/15 border-accent-red/40' }
+      : null;
+
+  return (
+    <div
+      className="relative w-full h-14 shrink-0 z-40 flex items-center gap-4 px-4 bg-[#1E2226] border-b border-[#262B30] font-mono text-xs select-none"
+      role="region"
+      aria-label="Human Authority Gate"
+    >
+      {!stagedProposal || approvalStatus === 'IDLE' ? (
+        // Idle state — same bar, same height, autonomy policy control only.
         <button
           onClick={() =>
-            setAutonomyMode(
-              autonomyMode === 'MANUAL_APPROVAL' ? 'AUTO_APPROVE_SAFE' : 'MANUAL_APPROVAL'
-            )
+            setAutonomyMode(autonomyMode === 'MANUAL_APPROVAL' ? 'AUTO_APPROVE_SAFE' : 'MANUAL_APPROVAL')
           }
-          className="flex items-center gap-1.5 hover:text-accent-teal transition-colors"
+          className="flex items-center gap-2 hover:text-accent-teal transition-colors"
           aria-label="Toggle Autonomy Gate Policy"
         >
           {autonomyMode === 'MANUAL_APPROVAL' ? (
             <>
               <Lock className="w-3.5 h-3.5 text-accent-amber" />
-              <span className="text-[#8E99A2]">GATE:</span>
+              <span className="text-[#8E99A2]">AUTHORITY GATE:</span>
               <span className="font-semibold text-accent-amber">MANUAL_APPROVAL</span>
             </>
           ) : (
             <>
               <Unlock className="w-3.5 h-3.5 text-accent-teal" />
-              <span className="text-[#8E99A2]">GATE:</span>
-              <span className="font-semibold text-accent-teal">AUTO_SAFE (&gt;{safetyThreshold})</span>
+              <span className="text-[#8E99A2]">AUTHORITY GATE:</span>
+              <span className="font-semibold text-accent-teal">
+                AUTO_SAFE (&gt;{safetyThreshold})
+              </span>
             </>
           )}
+          <span className="text-[#5C646D] text-[10px]">— no motion commits without this</span>
         </button>
-      </div>
-    );
-  }
-
-  const margin = stagedProposal?.predictedMinMargin ?? 0.5;
-  const marginColor =
-    margin >= 0.6
-      ? 'text-accent-teal'
-      : margin >= 0.35
-      ? 'text-accent-amber'
-      : 'text-accent-red';
-
-  const marginBgColor =
-    margin >= 0.6
-      ? 'bg-accent-teal'
-      : margin >= 0.35
-      ? 'bg-accent-amber'
-      : 'bg-accent-red';
-
-  return (
-    <div
-      className="absolute top-14 left-1/2 -translate-x-1/2 z-30 w-[540px] max-w-[calc(100vw-32px)] bg-[#1E2226] border border-[#262B30] shadow-2xl font-mono text-xs select-none"
-      role="dialog"
-      aria-label="Human Authority Gate"
-    >
-      {/* Top Banner Bar */}
-      <div className="flex items-center justify-between px-3.5 py-2 bg-[#181B1E] border-b border-[#262B30]">
-        <div className="flex items-center gap-2">
-          {approvalStatus === 'PENDING_APPROVAL' ? (
-            <ShieldAlert className="w-4 h-4 text-accent-amber animate-pulse" />
-          ) : approvalStatus === 'APPROVED' ? (
-            <ShieldCheck className="w-4 h-4 text-accent-teal" />
-          ) : approvalStatus === 'EXECUTING' ? (
-            <Play className="w-4 h-4 text-accent-teal" />
-          ) : (
-            <AlertTriangle className="w-4 h-4 text-accent-red" />
+      ) : (
+        <>
+          {/* Status badge */}
+          {statusBadge && (
+            <div
+              className={`flex items-center gap-1.5 px-2 py-1 border shrink-0 ${statusBadge.bg}`}
+            >
+              <statusBadge.icon className={`w-3.5 h-3.5 ${statusBadge.cls} ${approvalStatus === 'PENDING_APPROVAL' ? 'animate-pulse' : ''}`} />
+              <span className={`font-semibold text-[11px] ${statusBadge.cls}`}>{approvalStatus}</span>
+            </div>
           )}
-          <span className="font-semibold text-[#E8E3DA] tracking-wider text-[11px]">
-            HUMAN AUTHORITY GATE (§3.3)
-          </span>
-          <span
-            className={`px-1.5 py-0.5 text-[10px] font-semibold border ${
-              approvalStatus === 'PENDING_APPROVAL'
-                ? 'bg-accent-amber/20 text-accent-amber border-accent-amber/40'
-                : approvalStatus === 'APPROVED'
-                ? 'bg-accent-teal/20 text-accent-teal border-accent-teal/40'
-                : approvalStatus === 'EXECUTING'
-                ? 'bg-accent-teal/20 text-accent-teal border-accent-teal/40'
-                : 'bg-accent-red/20 text-accent-red border-accent-red/40'
-            }`}
-          >
-            {approvalStatus}
-          </span>
-        </div>
 
-        {/* Clear Proposal Button */}
-        {approvalStatus !== 'EXECUTING' && (
-          <button
-            onClick={clearProposal}
-            className="text-[#8E99A2] hover:text-[#E8E3DA] text-[10px] px-2 py-0.5 border border-[#262B30] hover:border-[#3E7C79] transition-colors"
-          >
-            DISMISS [ESC]
-          </button>
-        )}
-      </div>
-
-      {/* Staged Proposal Details */}
-      {stagedProposal && (
-        <div className="p-3.5 space-y-3">
-          <div className="grid grid-cols-3 gap-2 text-[10px]">
-            {/* Target Destination */}
-            <div className="p-2 bg-[#14171A] border border-[#262B30]">
-              <div className="text-[#8E99A2] flex items-center gap-1">
-                <Navigation className="w-3 h-3 text-accent-teal" />
-                <span>TARGET:</span>
-              </div>
-              <div className="text-[#E8E3DA] font-semibold mt-0.5 tabular-nums">
-                [{stagedProposal.targetWaypoint.x}, {stagedProposal.targetWaypoint.y},{' '}
-                {stagedProposal.targetWaypoint.z}]
-              </div>
-            </div>
-
-            {/* Gait Profile */}
-            <div className="p-2 bg-[#14171A] border border-[#262B30]">
-              <div className="text-[#8E99A2] flex items-center gap-1">
-                <Footprints className="w-3 h-3 text-accent-teal" />
-                <span>GAIT:</span>
-              </div>
-              <div className="text-accent-teal font-semibold mt-0.5 truncate">
-                {stagedProposal.gaitProfile}
-              </div>
-            </div>
-
-            {/* Est. Duration & Waypoints */}
-            <div className="p-2 bg-[#14171A] border border-[#262B30]">
-              <div className="text-[#8E99A2] flex items-center gap-1">
-                <Clock className="w-3 h-3 text-accent-amber" />
-                <span>TRAJECTORY:</span>
-              </div>
-              <div className="text-[#E8E3DA] font-semibold mt-0.5 tabular-nums">
-                {stagedProposal.waypoints.length} pts • {stagedProposal.estimatedDurationSec}s
-              </div>
-            </div>
+          {/* Route summary — single-line, compact */}
+          <div className="flex items-center gap-3 text-[11px] text-[#8E99A2] truncate min-w-0">
+            <span className="text-[#E8E3DA] tabular-nums truncate">
+              [{stagedProposal.targetWaypoint.x}, {stagedProposal.targetWaypoint.y}, {stagedProposal.targetWaypoint.z}]
+            </span>
+            <span className="text-accent-teal font-semibold shrink-0">{stagedProposal.gaitProfile}</span>
+            <span className="tabular-nums shrink-0">
+              {stagedProposal.waypoints.length}pts · {stagedProposal.estimatedDurationSec}s
+            </span>
           </div>
 
-          {/* Predicted Stability Margin Gauge */}
-          <div className="p-2.5 bg-[#14171A] border border-[#262B30] space-y-1.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-[#8E99A2] font-semibold uppercase tracking-wider">
-                Predicted Min Stability Margin (§1.3):
-              </span>
-              <span className={`font-semibold tabular-nums ${marginColor}`}>
-                {(margin * 100).toFixed(0)}%
-              </span>
-            </div>
-            <div className="w-full h-2 bg-[#181B1E] border border-[#262B30] overflow-hidden">
+          {/* Margin gauge — compact horizontal */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="w-20 h-1.5 bg-[#14171A] border border-[#262B30] overflow-hidden">
               <div
-                className={`h-full ${marginBgColor} transition-all duration-150`}
+                className={`h-full ${marginBarColor}`}
                 style={{ width: `${Math.max(0, Math.min(100, margin * 100))}%` }}
               />
             </div>
+            <span className={`font-semibold tabular-nums text-[11px] ${marginColor}`}>
+              {(margin * 100).toFixed(0)}%
+            </span>
           </div>
 
-          {/* Action Decision Area */}
+          <div className="flex-1" />
+
+          {/* Right-side actions, state-dependent */}
           {approvalStatus === 'PENDING_APPROVAL' && (
-            <div className="space-y-2 pt-1">
-              {!isRejectOpen ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={approveProposal}
-                    className="flex items-center justify-center gap-2 py-2 px-4 bg-accent-teal hover:bg-accent-teal/80 text-[#14171A] font-bold transition-colors focus:ring-1 focus:ring-accent-teal"
-                    aria-label="Approve Route"
-                  >
-                    <Check className="w-4 h-4 stroke-[3]" />
-                    <span>APPROVE ROUTE [A]</span>
-                  </button>
+            <div className="flex items-center gap-2 shrink-0 relative">
+              <button
+                onClick={approveProposal}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-teal hover:bg-accent-teal/80 text-[#14171A] font-bold transition-colors focus:ring-1 focus:ring-accent-teal"
+                aria-label="Approve Route"
+              >
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>APPROVE [A]</span>
+              </button>
+              <button
+                onClick={() => setIsRejectOpen((v) => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] font-bold transition-colors focus:ring-1 focus:ring-accent-red"
+                aria-label="Reject Plan With Reason"
+                aria-expanded={isRejectOpen}
+              >
+                <X className="w-3.5 h-3.5 stroke-[3]" />
+                <span>REJECT [R]</span>
+              </button>
 
-                  <button
-                    onClick={() => setIsRejectOpen(true)}
-                    className="flex items-center justify-center gap-2 py-2 px-4 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] font-bold transition-colors focus:ring-1 focus:ring-accent-red"
-                    aria-label="Reject Plan With Reason"
-                  >
-                    <X className="w-4 h-4 stroke-[3]" />
-                    <span>REJECT PLAN [R]</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="p-3 bg-[#14171A] border border-accent-red space-y-2.5">
-                  <div className="text-accent-red font-semibold text-[11px] flex items-center justify-between">
-                    <span>OPERATOR REJECTION FEEDBACK:</span>
-                    <button
-                      onClick={() => setIsRejectOpen(false)}
-                      className="text-[#8E99A2] hover:text-[#E8E3DA] text-[10px]"
-                    >
-                      CANCEL [ESC]
-                    </button>
+              {isRejectOpen && (
+                <div
+                  ref={popoverRef}
+                  className="absolute top-full right-0 mt-2 w-80 p-3 bg-[#14171A] border border-accent-red shadow-2xl space-y-2.5 z-50"
+                  role="dialog"
+                  aria-label="Operator Rejection Feedback"
+                >
+                  <div className="text-accent-red font-semibold text-[11px]">
+                    OPERATOR REJECTION FEEDBACK
                   </div>
-
                   <select
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
@@ -275,7 +223,6 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                       </option>
                     ))}
                   </select>
-
                   <input
                     type="text"
                     value={customReason}
@@ -283,7 +230,6 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                     placeholder="Type custom operator reason..."
                     className="w-full p-1.5 bg-[#181B1E] border border-[#262B30] text-[#E8E3DA] text-xs focus:outline-none focus:border-accent-teal"
                   />
-
                   <button
                     onClick={() => {
                       rejectProposal(customReason);
@@ -298,48 +244,36 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
             </div>
           )}
 
-          {/* Authorized Banner */}
           {approvalStatus === 'APPROVED' && (
-            <div className="p-2.5 bg-accent-teal/10 border border-accent-teal text-accent-teal flex items-center justify-between text-[11px]">
-              <span className="font-semibold flex items-center gap-1.5">
-                <Check className="w-4 h-4" />
-                ROUTE AUTHORIZED FOR EXECUTION
-              </span>
-              <span className="text-[#8E99A2] text-[10px]">
-                Awaiting execute_staged_proposal invocation...
-              </span>
+            <div className="text-accent-teal text-[11px] font-semibold shrink-0">
+              AUTHORIZED — awaiting execute_staged_proposal
             </div>
           )}
 
-          {/* Rejected Feedback Banner */}
           {approvalStatus === 'REJECTED' && (
-            <div className="p-2.5 bg-accent-red/10 border border-accent-red text-accent-red space-y-1 text-[11px]">
-              <div className="font-semibold flex items-center gap-1.5">
-                <X className="w-4 h-4" />
-                PROPOSAL REJECTED BY OPERATOR
-              </div>
-              <div className="text-[#E8E3DA] text-[10px]">Reason: &quot;{rejectionReason}&quot;</div>
+            <div className="text-[11px] text-[#E8E3DA] truncate max-w-[280px] shrink-0" title={rejectionReason ?? ''}>
+              Reason: &quot;{rejectionReason}&quot;
             </div>
           )}
 
-          {/* Executing Status Banner */}
-          {approvalStatus === 'EXECUTING' && (
-            <div className="p-2.5 bg-accent-teal/10 border border-accent-teal flex items-center justify-between">
-              <div className="flex items-center gap-2 text-accent-teal font-semibold text-[11px]">
-                <div className="w-2 h-2 rounded-full bg-accent-teal animate-pulse" />
-                <span>ROBOT EXECUTING STAGED TRAJECTORY...</span>
-              </div>
-              {onAbortExecution && (
-                <button
-                  onClick={onAbortExecution}
-                  className="px-2 py-0.5 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] text-[10px] font-bold"
-                >
-                  EMERGENCY STOP
-                </button>
-              )}
-            </div>
+          {approvalStatus === 'EXECUTING' && onAbortExecution && (
+            <button
+              onClick={onAbortExecution}
+              className="px-3 py-1.5 bg-accent-red hover:bg-accent-red/80 text-[#E8E3DA] text-[11px] font-bold shrink-0"
+            >
+              EMERGENCY STOP
+            </button>
           )}
-        </div>
+
+          {approvalStatus !== 'EXECUTING' && (
+            <button
+              onClick={clearProposal}
+              className="text-[#8E99A2] hover:text-[#E8E3DA] text-[10px] px-2 py-1 border border-[#262B30] hover:border-[#3E7C79] transition-colors shrink-0"
+            >
+              DISMISS [ESC]
+            </button>
+          )}
+        </>
       )}
     </div>
   );

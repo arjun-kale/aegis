@@ -149,17 +149,12 @@ export const useMissionStore = create<MissionState>()(
     thermalHeadroom: 0.88,
     activeFaults: [],
     mechanisms: INITIAL_MECHANISMS,
-    missionLog: [
-      {
-        id: 'init-0',
-        timestamp: Date.now(),
-        type: 'SYSTEM',
-        source: 'SYSTEM',
-        title: 'Workbench Initialized',
-        detail: 'Facility loaded with seed 42. Human approval gate active.',
-        status: 'INFO',
-      },
-    ],
+    // Deliberately empty at module-eval time: a Date.now()-stamped entry
+    // here would be computed once during SSR and again during client
+    // hydration (different wall-clock values), producing a text-mismatch
+    // hydration error. The "Workbench Initialized" entry is instead added
+    // client-side from a useEffect in app/page.tsx, after mount.
+    missionLog: [],
     explorationGrid: {},
     scannedCellsCount: 0,
     facilitySeed: 42,

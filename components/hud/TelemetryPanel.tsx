@@ -97,7 +97,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-30 w-80 bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl flex flex-col"
+      className="fixed left-4 top-[100px] bottom-4 z-30 w-[360px] max-w-[calc(100vw-32px)] bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl flex flex-col"
       role="region"
       aria-label="Robot Live Telemetry"
     >
@@ -116,7 +116,7 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         </button>
       </div>
 
-      <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
+      <div className="p-3 space-y-3 flex-1 overflow-y-auto">
         {/* 1. Static Stability Margin Meter (§1.3, §7) */}
         <div>
           <div className="flex justify-between items-center mb-1">

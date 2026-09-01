@@ -212,7 +212,7 @@ export function FallbackConsole({ isOpen, onClose }: FallbackConsoleProps) {
   const presets = TOOL_PAYLOAD_PRESETS[currentTool.name] || [];
 
   return (
-    <div className="absolute right-4 top-16 bottom-4 w-[560px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-surface/95 backdrop-blur-md border border-surface-border rounded-lg shadow-2xl overflow-hidden font-mono text-xs">
+    <div className="fixed right-4 top-[100px] bottom-4 w-[480px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#1E2226] border border-[#262B30] shadow-2xl overflow-hidden font-mono text-xs">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold tracking-wide">

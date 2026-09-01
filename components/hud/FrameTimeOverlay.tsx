@@ -126,7 +126,7 @@ export function FrameTimeOverlay({ isOpen, onClose }: FrameTimeOverlayProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute left-4 bottom-4 z-30 flex flex-col bg-surface/95 backdrop-blur-md border border-surface-border rounded-lg shadow-2xl overflow-hidden font-mono text-xs w-[310px]">
+    <div className="fixed left-4 top-[100px] bottom-4 z-30 flex flex-col bg-[#1E2226] border border-[#262B30] shadow-2xl overflow-hidden font-mono text-xs w-[360px] max-w-[calc(100vw-32px)]">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold">

@@ -200,8 +200,8 @@ describe('State Core & Partition (Phase 1)', () => {
       });
 
       const log = useMissionStore.getState().missionLog;
-      expect(log.length).toBe(2);
-      expect(log[1].title).toBe('stage_kinematic_trajectory');
+      expect(log.length).toBe(1);
+      expect(log[0].title).toBe('stage_kinematic_trajectory');
 
       store.updateExplorationCell('c_10_5', 'scanned');
       expect(useMissionStore.getState().scannedCellsCount).toBe(1);
