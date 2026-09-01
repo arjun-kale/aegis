@@ -11,6 +11,7 @@ import { FacilityDevPanel } from '@/components/hud/FacilityDevPanel';
 import { AuthorityGateHUD } from '@/components/hud/AuthorityGateHUD';
 import { TelemetryPanel } from '@/components/hud/TelemetryPanel';
 import { ToolCallLog } from '@/components/hud/ToolCallLog';
+import { EngineeringViewHUD } from '@/components/hud/EngineeringViewHUD';
 import { registerWebMcpTools } from '@/lib/webmcp/register';
 import {
   FullBodyPoseTargets,
@@ -48,6 +49,7 @@ export default function Home() {
   const [isFacilityDevOpen, setIsFacilityDevOpen] = useState<boolean>(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState<boolean>(true);
   const [isToolLogOpen, setIsToolLogOpen] = useState<boolean>(false);
+  const [isEngineeringViewOpen, setIsEngineeringViewOpen] = useState<boolean>(false);
 
   // Facility & Store State
   const facilitySeed = useMissionStore((state) => state.facilitySeed);
@@ -209,6 +211,9 @@ export default function Home() {
       } else if (e.key === 'F5') {
         e.preventDefault();
         setIsFacilityDevOpen((prev) => !prev);
+      } else if (e.key === 'F6') {
+        e.preventDefault();
+        setIsEngineeringViewOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -251,6 +256,8 @@ export default function Home() {
         onToggleTelemetry={() => setIsTelemetryOpen((prev) => !prev)}
         isToolLogOpen={isToolLogOpen}
         onToggleToolLog={() => setIsToolLogOpen((prev) => !prev)}
+        isEngineeringViewOpen={isEngineeringViewOpen}
+        onToggleEngineeringView={() => setIsEngineeringViewOpen((prev) => !prev)}
       />
 
       {/* Human Authority Gate Prominent HUD Banner (§3.3) */}
@@ -274,6 +281,12 @@ export default function Home() {
           showSupportPolygon={true}
         />
       </div>
+
+      {/* Exploded Engineering View Controller (§8) */}
+      <EngineeringViewHUD
+        isOpen={isEngineeringViewOpen}
+        onClose={() => setIsEngineeringViewOpen(false)}
+      />
 
       {/* Live 10Hz Telemetry Bus Readout Panel (§6, §7) */}
       <TelemetryPanel

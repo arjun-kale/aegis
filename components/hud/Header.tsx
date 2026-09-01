@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { FpsCounter } from './FpsCounter';
 import { resolveModelContext, ACTIVE_TOOLS } from '@/lib/webmcp/register';
-import { Shield, Radio, Terminal, Activity, Sliders, Footprints, Compass, Gauge, ListFilter } from 'lucide-react';
+import { Shield, Radio, Terminal, Activity, Sliders, Footprints, Compass, Gauge, ListFilter, Layers } from 'lucide-react';
 
 interface HeaderProps {
   onToggleConsole: () => void;
@@ -20,6 +20,8 @@ interface HeaderProps {
   isTelemetryOpen?: boolean;
   onToggleToolLog?: () => void;
   isToolLogOpen?: boolean;
+  onToggleEngineeringView?: () => void;
+  isEngineeringViewOpen?: boolean;
 }
 
 export function Header({
@@ -37,6 +39,8 @@ export function Header({
   isTelemetryOpen = false,
   onToggleToolLog,
   isToolLogOpen = false,
+  onToggleEngineeringView,
+  isEngineeringViewOpen = false,
 }: HeaderProps) {
   const [hasWebMcp, setHasWebMcp] = useState<boolean | null>(null);
   const [isSecure, setIsSecure] = useState<boolean>(true);
@@ -60,7 +64,7 @@ export function Header({
               A.E.G.I.S
             </span>
             <span className="text-[10px] px-1.5 py-0.5 bg-[#14171A] border border-[#262B30] text-[#8E99A2] uppercase tracking-widest">
-              v0.1.0 • Phase 7
+              v0.1.0 • Phase 8
             </span>
           </div>
           <div className="text-[10px] text-[#8E99A2]">
@@ -99,6 +103,21 @@ export function Header({
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5">
+        {onToggleEngineeringView && (
+          <button
+            onClick={onToggleEngineeringView}
+            title="Toggle Exploded Engineering View (F6)"
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors border ${
+              isEngineeringViewOpen
+                ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+                : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#E8E3DA]'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>EXPLODED VIEW</span>
+          </button>
+        )}
+
         {onToggleTelemetry && (
           <button
             onClick={onToggleTelemetry}

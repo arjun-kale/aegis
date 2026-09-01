@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid, Line } from '@react-three/drei';
 import { SceneMetricsTracker } from './SceneMetricsTracker';
 import { Robot } from './Robot';
@@ -11,7 +11,7 @@ import { FullBodyKinematicState } from '@/lib/robot/kinematics';
 import { StabilityAnalysisResult } from '@/lib/robot/stability';
 import { LocomotionPathPoint } from '@/lib/robot/locomotion';
 import { FacilityGeometryData } from '@/lib/world/generator';
-import { MechanismRecord, StagedProposal } from '@/lib/state/missionStore';
+import { MechanismRecord, StagedProposal, useMissionStore } from '@/lib/state/missionStore';
 import * as THREE from 'three';
 
 interface ViewportProps {
@@ -168,20 +168,40 @@ export default function Viewport({
         {/* Procedural Bipedal Robot */}
         <Robot pose={pose} showTargetGizmos={showTargetGizmos} />
 
-        {/* Orbit Camera Controls */}
-        <OrbitControls
-          makeDefault
-          enableDamping
-          dampingFactor={0.08}
-          minDistance={1.5}
-          maxDistance={50}
-          target={[4, 1.2, 6]}
-          maxPolarAngle={Math.PI / 2 - 0.02}
-        />
+        {/* Camera Transition & Orbit Controls (§8) */}
+        <CameraRig targetPos={pose.torsoPosition} />
 
         {/* Telemetry and Frame Metrics Tracker */}
         <SceneMetricsTracker />
       </Canvas>
     </div>
+  );
+}
+
+function CameraRig({ targetPos }: { targetPos: [number, number, number] }) {
+  const disassemblyFactor = useMissionStore((state) => state.disassemblyFactor);
+  const controlsRef = React.useRef<any>(null);
+
+  useFrame((state, delta) => {
+    if (controlsRef.current && disassemblyFactor > 0.05) {
+      // Smoothly interpolate orbit target toward robot torso center for engineering inspection
+      const curTarget = controlsRef.current.target;
+      const targetVec = new THREE.Vector3(targetPos[0], targetPos[1], targetPos[2]);
+      curTarget.lerp(targetVec, delta * 3.0);
+      controlsRef.current.update();
+    }
+  });
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      makeDefault
+      enableDamping
+      dampingFactor={0.08}
+      minDistance={1.2}
+      maxDistance={50}
+      target={[4, 1.2, 6]}
+      maxPolarAngle={Math.PI / 2 - 0.02}
+    />
   );
 }
