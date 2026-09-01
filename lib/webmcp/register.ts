@@ -8,6 +8,7 @@ import { stageLocomotionPlanTool } from './tools/stage_locomotion_plan';
 import { executeStagedProposalTool } from './tools/execute_staged_proposal';
 import { overrideFacilityMechanismTool } from './tools/override_facility_mechanism';
 import { setExplodedEngineeringViewTool } from './tools/set_exploded_engineering_view';
+import { getMissionPlanTool } from './tools/get_mission_plan';
 
 /**
  * Safely resolves the W3C WebMCP Model Context from navigator or document.
@@ -24,7 +25,7 @@ export function resolveModelContext(): ModelContext | null {
 }
 
 /**
- * Active WebMCP tool registry for Project A.E.G.I.S (§5, §6, §8).
+ * Active WebMCP tool registry for Project A.E.G.I.S (§5, §6, §8, §9).
  */
 export const ACTIVE_TOOLS: ToolDescriptor[] = [
   getSystemStatusTool,
@@ -36,6 +37,7 @@ export const ACTIVE_TOOLS: ToolDescriptor[] = [
   executeStagedProposalTool,
   overrideFacilityMechanismTool,
   setExplodedEngineeringViewTool,
+  getMissionPlanTool,
 ];
 
 /**

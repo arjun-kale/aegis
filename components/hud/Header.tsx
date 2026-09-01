@@ -3,7 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import { FpsCounter } from './FpsCounter';
 import { resolveModelContext, ACTIVE_TOOLS } from '@/lib/webmcp/register';
-import { Shield, Radio, Terminal, Activity, Sliders, Footprints, Compass, Gauge, ListFilter, Layers } from 'lucide-react';
+import {
+  Shield,
+  Radio,
+  Terminal,
+  Activity,
+  Sliders,
+  Footprints,
+  Compass,
+  Gauge,
+  ListFilter,
+  Layers,
+  FileJson,
+} from 'lucide-react';
 
 interface HeaderProps {
   onToggleConsole: () => void;
@@ -22,6 +34,8 @@ interface HeaderProps {
   isToolLogOpen?: boolean;
   onToggleEngineeringView?: () => void;
   isEngineeringViewOpen?: boolean;
+  onToggleExportModal?: () => void;
+  isExportModalOpen?: boolean;
 }
 
 export function Header({
@@ -41,6 +55,8 @@ export function Header({
   isToolLogOpen = false,
   onToggleEngineeringView,
   isEngineeringViewOpen = false,
+  onToggleExportModal,
+  isExportModalOpen = false,
 }: HeaderProps) {
   const [hasWebMcp, setHasWebMcp] = useState<boolean | null>(null);
   const [isSecure, setIsSecure] = useState<boolean>(true);
@@ -64,7 +80,7 @@ export function Header({
               A.E.G.I.S
             </span>
             <span className="text-[10px] px-1.5 py-0.5 bg-[#14171A] border border-[#262B30] text-[#8E99A2] uppercase tracking-widest">
-              v0.1.0 • Phase 8
+              v0.1.0 • Phase 9
             </span>
           </div>
           <div className="text-[10px] text-[#8E99A2]">
@@ -103,6 +119,21 @@ export function Header({
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5">
+        {onToggleExportModal && (
+          <button
+            onClick={onToggleExportModal}
+            title="Export / Replay Mission Plan (F7)"
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors border ${
+              isExportModalOpen
+                ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+                : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#E8E3DA]'
+            }`}
+          >
+            <FileJson className="w-3.5 h-3.5" />
+            <span>EXPORT / REPLAY</span>
+          </button>
+        )}
+
         {onToggleEngineeringView && (
           <button
             onClick={onToggleEngineeringView}

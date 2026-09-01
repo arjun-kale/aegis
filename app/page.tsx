@@ -12,6 +12,7 @@ import { AuthorityGateHUD } from '@/components/hud/AuthorityGateHUD';
 import { TelemetryPanel } from '@/components/hud/TelemetryPanel';
 import { ToolCallLog } from '@/components/hud/ToolCallLog';
 import { EngineeringViewHUD } from '@/components/hud/EngineeringViewHUD';
+import { MissionExportModal } from '@/components/hud/MissionExportModal';
 import { registerWebMcpTools } from '@/lib/webmcp/register';
 import {
   FullBodyPoseTargets,
@@ -50,6 +51,7 @@ export default function Home() {
   const [isTelemetryOpen, setIsTelemetryOpen] = useState<boolean>(true);
   const [isToolLogOpen, setIsToolLogOpen] = useState<boolean>(false);
   const [isEngineeringViewOpen, setIsEngineeringViewOpen] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   // Facility & Store State
   const facilitySeed = useMissionStore((state) => state.facilitySeed);
@@ -214,6 +216,9 @@ export default function Home() {
       } else if (e.key === 'F6') {
         e.preventDefault();
         setIsEngineeringViewOpen((prev) => !prev);
+      } else if (e.key === 'F7') {
+        e.preventDefault();
+        setIsExportModalOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -258,6 +263,8 @@ export default function Home() {
         onToggleToolLog={() => setIsToolLogOpen((prev) => !prev)}
         isEngineeringViewOpen={isEngineeringViewOpen}
         onToggleEngineeringView={() => setIsEngineeringViewOpen((prev) => !prev)}
+        isExportModalOpen={isExportModalOpen}
+        onToggleExportModal={() => setIsExportModalOpen((prev) => !prev)}
       />
 
       {/* Human Authority Gate Prominent HUD Banner (§3.3) */}
@@ -281,6 +288,16 @@ export default function Home() {
           showSupportPolygon={true}
         />
       </div>
+
+      {/* Mission Plan Export & Replay Modal (§9) */}
+      <MissionExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        onReplayPlan={() => {
+          setIsPlaying(true);
+          setElapsedSimTime(0);
+        }}
+      />
 
       {/* Exploded Engineering View Controller (§8) */}
       <EngineeringViewHUD
