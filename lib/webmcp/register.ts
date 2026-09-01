@@ -1,0 +1,54 @@
+import { ModelContext, ToolDescriptor } from './types';
+import { getSystemStatusTool } from './tools/get_system_status';
+
+/**
+ * Safely resolves the W3C WebMCP Model Context from navigator or document.
+ * Returns null if not in a SecureContext (e.g. unencrypted HTTP) or if WebMCP is unsupported.
+ */
+export function resolveModelContext(): ModelContext | null {
+  if (typeof window === 'undefined') return null;
+  if (!window.isSecureContext) return null;
+
+  const nav = typeof navigator !== 'undefined' ? (navigator as any).modelContext : null;
+  const doc = typeof document !== 'undefined' ? (document as any).modelContext : null;
+
+  return nav ?? doc ?? null;
+}
+
+/**
+ * Active tool registry for Phase 0 (expanded in subsequent phases).
+ */
+export const ACTIVE_TOOLS: ToolDescriptor[] = [
+  getSystemStatusTool,
+];
+
+/**
+ * Register all tools into the WebMCP context if available.
+ * Returns a cleanup function for React useEffect unmounting.
+ */
+export function registerWebMcpTools(tools: ToolDescriptor[] = ACTIVE_TOOLS): () => void {
+  const mc = resolveModelContext();
+  if (!mc || typeof mc.registerTool !== 'function') {
+    return () => {};
+  }
+
+  tools.forEach((tool) => {
+    try {
+      mc.registerTool(tool);
+    } catch (err) {
+      console.warn(`[WebMCP] Failed to register tool ${tool.name}:`, err);
+    }
+  });
+
+  return () => {
+    if (typeof mc.unregisterTool === 'function') {
+      tools.forEach((tool) => {
+        try {
+          mc.unregisterTool!(tool.name);
+        } catch (err) {
+          console.warn(`[WebMCP] Failed to unregister tool ${tool.name}:`, err);
+        }
+      });
+    }
+  };
+}
