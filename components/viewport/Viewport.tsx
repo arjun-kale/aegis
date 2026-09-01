@@ -5,15 +5,21 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, Line } from '@react-three/drei';
 import { SceneMetricsTracker } from './SceneMetricsTracker';
 import { Robot } from './Robot';
+import { Facility } from './Facility';
 import { FullBodyKinematicState } from '@/lib/robot/kinematics';
-import { StabilityAnalysisResult, Point2D } from '@/lib/robot/stability';
+import { StabilityAnalysisResult } from '@/lib/robot/stability';
 import { LocomotionPathPoint } from '@/lib/robot/locomotion';
+import { FacilityGeometryData } from '@/lib/world/generator';
+import { MechanismRecord } from '@/lib/state/missionStore';
 import * as THREE from 'three';
 
 interface ViewportProps {
   pose: FullBodyKinematicState;
   stabilityState?: StabilityAnalysisResult;
-  pathPoints?: LocomotionPathPoint[];
+  pathPoints?: [number, number, number][] | LocomotionPathPoint[];
+  facilityData?: FacilityGeometryData;
+  mechanismStates?: Record<string, MechanismRecord>;
+  unexploredFrontiers?: [number, number, number][];
   showTargetGizmos?: boolean;
   showSupportPolygon?: boolean;
 }
@@ -22,6 +28,9 @@ export default function Viewport({
   pose,
   stabilityState,
   pathPoints = [],
+  facilityData,
+  mechanismStates = {},
+  unexploredFrontiers = [],
   showTargetGizmos = false,
   showSupportPolygon = true,
 }: ViewportProps) {
@@ -29,7 +38,6 @@ export default function Viewport({
   const polygonPoints = useMemo(() => {
     if (!stabilityState || stabilityState.supportPolygon.length === 0) return [];
     const pts = stabilityState.supportPolygon.map((p) => new THREE.Vector3(p.x, 0.005, p.z));
-    // Close the loop
     if (pts.length > 0) {
       pts.push(pts[0].clone());
     }
@@ -39,13 +47,18 @@ export default function Viewport({
   // Convert trajectory path points to 3D line
   const pathLinePoints = useMemo(() => {
     if (!pathPoints || pathPoints.length < 2) return [];
-    return pathPoints.map((p) => new THREE.Vector3(p.x, 0.01, p.z));
+    return pathPoints.map((p) => {
+      if (Array.isArray(p)) {
+        return new THREE.Vector3(p[0], p[1] + 0.02, p[2]);
+      }
+      return new THREE.Vector3(p.x, p.y + 0.02, p.z);
+    });
   }, [pathPoints]);
 
   return (
     <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
       <Canvas
-        camera={{ position: [3.2, 2.2, 3.8], fov: 45 }}
+        camera={{ position: [8, 12, 18], fov: 45 }}
         shadows
         gl={{
           antialias: true,
@@ -54,53 +67,73 @@ export default function Viewport({
       >
         <color attach="background" args={['#14171A']} />
 
-        {/* Studio Lighting */}
-        <ambientLight intensity={0.4} />
+        {/* Studio & Facility Lighting */}
+        <ambientLight intensity={0.45} />
         <directionalLight
-          position={[6, 12, 6]}
-          intensity={1.4}
+          position={[12, 22, 14]}
+          intensity={1.5}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-bias={-0.0001}
         />
         <directionalLight
-          position={[-6, 6, -4]}
-          intensity={0.35}
+          position={[-12, 14, -8]}
+          intensity={0.4}
           color="#3E7C79"
         />
 
-        {/* 40m Technical Nav Grid */}
+        {/* 60m Technical Nav Grid */}
         <Grid
           position={[0, -0.001, 0]}
-          args={[40, 40]}
-          cellSize={0.5}
+          args={[60, 60]}
+          cellSize={1.0}
           cellThickness={1}
           cellColor="#262B30"
-          sectionSize={2.5}
+          sectionSize={5.0}
           sectionThickness={1.5}
           sectionColor="#3E7C79"
-          fadeDistance={30}
+          fadeDistance={45}
           fadeStrength={1.5}
         />
 
-        {/* Trajectory Path Line */}
+        {/* Instanced Facility Geometry & Mechanisms */}
+        {facilityData && (
+          <Facility
+            geometryData={facilityData}
+            mechanismStates={mechanismStates}
+          />
+        )}
+
+        {/* Trajectory / A* Path Line */}
         {pathLinePoints.length > 1 && (
           <Line
             points={pathLinePoints}
-            color="#3E7C79"
-            lineWidth={2}
+            color="#00E5FF"
+            lineWidth={3}
             dashed
-            dashScale={5}
-            dashSize={0.5}
+            dashScale={4}
+            dashSize={0.4}
             gapSize={0.2}
           />
         )}
 
+        {/* Unexplored Frontier Markers (Cyan Pointers) */}
+        {unexploredFrontiers.map((f, idx) => (
+          <mesh key={`frontier_${idx}`} position={[f[0], f[1] + 0.1, f[2]]}>
+            <coneGeometry args={[0.15, 0.4, 8]} />
+            <meshStandardMaterial
+              color="#00E5FF"
+              emissive="#00E5FF"
+              emissiveIntensity={1.2}
+              wireframe
+            />
+          </mesh>
+        ))}
+
         {/* 2D Support Polygon & CoM Ground Projection (§1.3) */}
         {showSupportPolygon && stabilityState && (
           <group>
-            {/* Support Polygon Boundary Line */}
             {polygonPoints.length > 1 && (
               <Line
                 points={polygonPoints}
@@ -115,13 +148,10 @@ export default function Viewport({
               />
             )}
 
-            {/* CoM Ground Projection Marker */}
             <mesh position={stabilityState.comGround}>
-              <cylinderGeometry args={[0.04, 0.04, 0.01, 16]} />
+              <cylinderGeometry args={[0.05, 0.05, 0.01, 16]} />
               <meshBasicMaterial
-                color={
-                  stabilityState.isInsidePolygon ? '#00E5FF' : '#C4472F'
-                }
+                color={stabilityState.isInsidePolygon ? '#00E5FF' : '#C4472F'}
               />
             </mesh>
           </group>
@@ -135,9 +165,9 @@ export default function Viewport({
           makeDefault
           enableDamping
           dampingFactor={0.08}
-          minDistance={1.2}
-          maxDistance={30}
-          target={[0, 0.75, 0]}
+          minDistance={1.5}
+          maxDistance={50}
+          target={[4, 1.2, 6]}
           maxPolarAngle={Math.PI / 2 - 0.02}
         />
 

@@ -7,6 +7,7 @@ import { FallbackConsole } from '@/components/hud/FallbackConsole';
 import { FrameTimeOverlay } from '@/components/hud/FrameTimeOverlay';
 import { IkDevPanel, STANCE_PRESETS } from '@/components/hud/IkDevPanel';
 import { GaitDevPanel } from '@/components/hud/GaitDevPanel';
+import { FacilityDevPanel } from '@/components/hud/FacilityDevPanel';
 import { registerWebMcpTools } from '@/lib/webmcp/register';
 import {
   FullBodyPoseTargets,
@@ -19,6 +20,11 @@ import {
   LocomotionFrameResult,
 } from '@/lib/robot/locomotion';
 import { evaluateStaticStability } from '@/lib/robot/stability';
+import { generateFacility, FacilityGeometryData } from '@/lib/world/generator';
+import { findAStarPath, NavPathResult } from '@/lib/world/navigation';
+import { performSpatialScan } from '@/lib/world/exploration';
+import { applyMechanismCommand, getMechanismColliders } from '@/lib/world/mechanisms';
+import { useMissionStore } from '@/lib/state/missionStore';
 
 // Dynamic client import with ssr: false
 const Viewport = dynamic(() => import('@/components/viewport/Viewport'), {
@@ -26,7 +32,7 @@ const Viewport = dynamic(() => import('@/components/viewport/Viewport'), {
   loading: () => (
     <div className="flex flex-col items-center justify-center w-full h-full bg-[#14171A] text-foreground-muted font-mono text-xs gap-3">
       <div className="w-8 h-8 border-2 border-accent-teal border-t-transparent rounded-full animate-spin" />
-      <div>INITIALIZING 3D ENGINE & ROBOT RIG...</div>
+      <div>INITIALIZING 3D FACILITY & ENGINE...</div>
     </div>
   ),
 });
@@ -35,23 +41,65 @@ export default function Home() {
   const [isConsoleOpen, setIsConsoleOpen] = useState<boolean>(false);
   const [isFrameTimeOpen, setIsFrameTimeOpen] = useState<boolean>(false);
   const [isIkDevOpen, setIsIkDevOpen] = useState<boolean>(false);
-  const [isGaitDevOpen, setIsGaitDevOpen] = useState<boolean>(true); // Open by default for Phase 3
+  const [isGaitDevOpen, setIsGaitDevOpen] = useState<boolean>(false);
+  const [isFacilityDevOpen, setIsFacilityDevOpen] = useState<boolean>(true); // Open by default for Phase 4
 
-  // Manual IK Targets (used when Gait locomotion is paused/inactive)
+  // Facility & Seed State
+  const facilitySeed = useMissionStore((state) => state.facilitySeed);
+  const setFacilitySeed = useMissionStore((state) => state.setFacilitySeed);
+  const mechanisms = useMissionStore((state) => state.mechanisms);
+  const updateMechanism = useMissionStore((state) => state.updateMechanism);
+  const explorationGrid = useMissionStore((state) => state.explorationGrid);
+  const batchUpdateExplorationCells = useMissionStore((state) => state.batchUpdateExplorationCells);
+  const scannedCellsCount = useMissionStore((state) => state.scannedCellsCount);
+
+  // Generate facility geometry
+  const facilityData: FacilityGeometryData = useMemo(
+    () => generateFacility(facilitySeed),
+    [facilitySeed]
+  );
+
+  // Combined colliders (static walls + dynamic active mechanism barriers)
+  const activeColliders = useMemo(() => {
+    const dynamicBarriers = getMechanismColliders(mechanisms);
+    return [...facilityData.colliders, ...dynamicBarriers];
+  }, [facilityData, mechanisms]);
+
+  // A* Navigation Query State
+  const [navTargetKey, setNavTargetKey] = useState<'extraction' | 'eastWing' | 'westVault'>('extraction');
+
+  const navGoalPos = useMemo<[number, number, number]>(() => {
+    if (navTargetKey === 'extraction') return facilityData.extractionPoint;
+    if (navTargetKey === 'eastWing') return [14, 0, 0];
+    return [-12, 0, 0];
+  }, [navTargetKey, facilityData]);
+
+  // Compute A* route from Entry Point [0, 0, 0] to Target
+  const navPathResult: NavPathResult = useMemo(() => {
+    return findAStarPath(facilityData.navGrid, [0, 0, 0], navGoalPos, mechanisms);
+  }, [facilityData, navGoalPos, mechanisms]);
+
+  // Manual IK Targets
   const [manualTargets, setManualTargets] = useState<FullBodyPoseTargets>(
     STANCE_PRESETS.default.targets
   );
 
-  // Locomotion Engine State
+  // Locomotion State
   const [gaitProfile, setGaitProfile] = useState<GaitProfileName>('CAUTIOUS_STEP');
   const [selectedPathKey, setSelectedPathKey] = useState<string>('straight20m');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [elapsedSimTime, setElapsedSimTime] = useState<number>(0);
 
-  const activePath = STANDARD_PATHS[selectedPathKey]?.points || STANDARD_PATHS.straight20m.points;
+  // Path for Locomotion Runner
+  const activePath = useMemo(() => {
+    if (navPathResult.path.length > 1) {
+      return navPathResult.path.map((pt) => ({ x: pt[0], y: pt[1], z: pt[2] }));
+    }
+    return STANDARD_PATHS[selectedPathKey]?.points || STANDARD_PATHS.straight20m.points;
+  }, [navPathResult, selectedPathKey]);
 
-  // Evaluate locomotion state for current time
+  // Step locomotion
   const locomotionResult: LocomotionFrameResult = useMemo(() => {
     return stepLocomotion(gaitProfile, elapsedSimTime, activePath, playbackSpeed);
   }, [gaitProfile, elapsedSimTime, activePath, playbackSpeed]);
@@ -63,11 +111,36 @@ export default function Home() {
     return { kinematicState: pose, stabilityState: stab };
   }, [manualTargets]);
 
-  // Determine active displayed pose & stability state
-  const currentPose = isGaitDevOpen || isPlaying ? locomotionResult.kinematicState : manualPose.kinematicState;
-  const currentStability = isGaitDevOpen || isPlaying ? locomotionResult.stabilityState : manualPose.stabilityState;
+  const currentPose = isPlaying || isGaitDevOpen ? locomotionResult.kinematicState : manualPose.kinematicState;
+  const currentStability = isPlaying || isGaitDevOpen ? locomotionResult.stabilityState : manualPose.stabilityState;
 
-  // Real-time animation loop when playing
+  // Unexplored Frontiers from Spatial Scanner
+  const [unexploredFrontiers, setUnexploredFrontiers] = useState<[number, number, number][]>([]);
+
+  // Spatial Scan Trigger
+  const handleTriggerScan = () => {
+    const robotOrigin = currentPose.torsoPosition;
+    const scanRes = performSpatialScan(robotOrigin, 15, activeColliders, explorationGrid);
+
+    // Update store
+    const updateRecord: Record<string, 'scanned'> = {};
+    scanRes.newlyScannedCells.forEach((k) => (updateRecord[k] = 'scanned'));
+    batchUpdateExplorationCells(updateRecord);
+
+    setUnexploredFrontiers(scanRes.unexploredFrontiers);
+  };
+
+  // Mechanism Toggle Handler
+  const handleToggleMechanism = (id: string, cmd: string) => {
+    const current = mechanisms[id];
+    if (!current) return;
+    const res = applyMechanismCommand(id, cmd, current);
+    if (res.success) {
+      updateMechanism(id, res.newState);
+    }
+  };
+
+  // Real-time animation loop when walking
   const lastTimeRef = useRef<number>(performance.now());
   useEffect(() => {
     if (!isPlaying) return;
@@ -78,10 +151,7 @@ export default function Home() {
     const loop = (now: number) => {
       const deltaSec = (now - lastTimeRef.current) / 1000;
       lastTimeRef.current = now;
-
-      // Advance simulation clock
       setElapsedSimTime((prev) => prev + deltaSec);
-
       animId = requestAnimationFrame(loop);
     };
 
@@ -97,7 +167,7 @@ export default function Home() {
     };
   }, []);
 
-  // Keyboard shortcut listener (F2: FrameTime, F3: IKDev, F4: GaitDev)
+  // Keyboard shortcut listener (F2: Perf, F3: IKDev, F4: GaitDev, F5: FacilityDev)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'F2') {
@@ -109,6 +179,9 @@ export default function Home() {
       } else if (e.key === 'F4') {
         e.preventDefault();
         setIsGaitDevOpen((prev) => !prev);
+      } else if (e.key === 'F5') {
+        e.preventDefault();
+        setIsFacilityDevOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -126,12 +199,26 @@ export default function Home() {
         isIkDevOpen={isIkDevOpen}
         onToggleIkDev={() => {
           setIsIkDevOpen((prev) => !prev);
-          if (!isIkDevOpen) setIsGaitDevOpen(false);
+          if (!isIkDevOpen) {
+            setIsGaitDevOpen(false);
+            setIsFacilityDevOpen(false);
+          }
         }}
         isGaitDevOpen={isGaitDevOpen}
         onToggleGaitDev={() => {
           setIsGaitDevOpen((prev) => !prev);
-          if (!isGaitDevOpen) setIsIkDevOpen(false);
+          if (!isGaitDevOpen) {
+            setIsIkDevOpen(false);
+            setIsFacilityDevOpen(false);
+          }
+        }}
+        isFacilityDevOpen={isFacilityDevOpen}
+        onToggleFacilityDev={() => {
+          setIsFacilityDevOpen((prev) => !prev);
+          if (!isFacilityDevOpen) {
+            setIsIkDevOpen(false);
+            setIsGaitDevOpen(false);
+          }
         }}
       />
 
@@ -140,7 +227,10 @@ export default function Home() {
         <Viewport
           pose={currentPose}
           stabilityState={currentStability}
-          pathPoints={isGaitDevOpen ? activePath : []}
+          pathPoints={navPathResult.path.length > 1 ? navPathResult.path : activePath}
+          facilityData={facilityData}
+          mechanismStates={mechanisms}
+          unexploredFrontiers={unexploredFrontiers}
           showTargetGizmos={isIkDevOpen}
           showSupportPolygon={true}
         />
@@ -158,7 +248,7 @@ export default function Home() {
         onClose={() => setIsFrameTimeOpen(false)}
       />
 
-      {/* IK Rig & Kinematics Dev Control Panel */}
+      {/* IK Rig Dev Panel */}
       <IkDevPanel
         isOpen={isIkDevOpen}
         onClose={() => setIsIkDevOpen(false)}
@@ -167,7 +257,7 @@ export default function Home() {
         currentPose={manualPose.kinematicState}
       />
 
-      {/* Locomotion & Gait Bench Control Panel */}
+      {/* Locomotion & Gait Bench Panel */}
       <GaitDevPanel
         isOpen={isGaitDevOpen}
         onClose={() => setIsGaitDevOpen(false)}
@@ -190,6 +280,22 @@ export default function Home() {
         stabilityResult={locomotionResult.stabilityState}
         progressM={locomotionResult.progressM}
         totalDistanceM={locomotionResult.totalDistanceM}
+      />
+
+      {/* Facility & Navigation Workbench Panel */}
+      <FacilityDevPanel
+        isOpen={isFacilityDevOpen}
+        onClose={() => setIsFacilityDevOpen(false)}
+        seed={facilitySeed}
+        onChangeSeed={setFacilitySeed}
+        mechanisms={mechanisms}
+        onToggleMechanism={handleToggleMechanism}
+        navPathResult={navPathResult}
+        selectedNavTargetName={navTargetKey}
+        onSelectNavTarget={setNavTargetKey}
+        onTriggerScan={handleTriggerScan}
+        scannedCellsCount={scannedCellsCount}
+        unexploredFrontiersCount={unexploredFrontiers.length}
       />
     </main>
   );

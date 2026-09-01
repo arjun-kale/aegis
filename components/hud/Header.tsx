@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { FpsCounter } from './FpsCounter';
 import { resolveModelContext } from '@/lib/webmcp/register';
-import { Shield, Radio, Terminal, Activity, Sliders, Footprints } from 'lucide-react';
+import { Shield, Radio, Terminal, Activity, Sliders, Footprints, Compass } from 'lucide-react';
 
 interface HeaderProps {
   onToggleConsole: () => void;
@@ -14,6 +14,8 @@ interface HeaderProps {
   isIkDevOpen: boolean;
   onToggleGaitDev: () => void;
   isGaitDevOpen: boolean;
+  onToggleFacilityDev: () => void;
+  isFacilityDevOpen: boolean;
 }
 
 export function Header({
@@ -25,6 +27,8 @@ export function Header({
   isIkDevOpen,
   onToggleGaitDev,
   isGaitDevOpen,
+  onToggleFacilityDev,
+  isFacilityDevOpen,
 }: HeaderProps) {
   const [hasWebMcp, setHasWebMcp] = useState<boolean | null>(null);
   const [isSecure, setIsSecure] = useState<boolean>(true);
@@ -48,7 +52,7 @@ export function Header({
               A.E.G.I.S
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-raised border border-surface-border text-foreground-muted uppercase tracking-widest font-mono">
-              v0.1.0 • Phase 3
+              v0.1.0 • Phase 4
             </span>
           </div>
           <div className="text-[11px] text-foreground-muted">
@@ -88,6 +92,19 @@ export function Header({
       {/* Right Controls */}
       <div className="flex items-center gap-2">
         <button
+          onClick={onToggleFacilityDev}
+          title="Toggle Facility & Navigation (F5)"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono transition-colors border ${
+            isFacilityDevOpen
+              ? 'bg-accent-teal/30 border-accent-teal text-accent-cyan'
+              : 'bg-surface-raised hover:bg-surface border-surface-border text-foreground'
+          }`}
+        >
+          <Compass className="w-3.5 h-3.5" />
+          <span>FACILITY & NAV</span>
+        </button>
+
+        <button
           onClick={onToggleGaitDev}
           title="Toggle Gait & Locomotion Bench (F4)"
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono transition-colors border ${
@@ -97,7 +114,7 @@ export function Header({
           }`}
         >
           <Footprints className="w-3.5 h-3.5" />
-          <span>GAIT BENCH</span>
+          <span>GAIT</span>
         </button>
 
         <button
@@ -110,7 +127,7 @@ export function Header({
           }`}
         >
           <Sliders className="w-3.5 h-3.5" />
-          <span>IK RIG DEV</span>
+          <span>IK RIG</span>
         </button>
 
         <button
@@ -123,7 +140,7 @@ export function Header({
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
-          <span>FRAME TIME</span>
+          <span>PERF</span>
         </button>
 
         <button
@@ -135,7 +152,7 @@ export function Header({
           }`}
         >
           <Terminal className="w-3.5 h-3.5" />
-          <span>FALLBACK CONSOLE</span>
+          <span>CONSOLE</span>
         </button>
       </div>
     </header>
