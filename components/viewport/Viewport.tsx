@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid, Line } from '@react-three/drei';
+import { RefreshCw, WifiOff } from 'lucide-react';
 import { SceneMetricsTracker } from './SceneMetricsTracker';
 import { Robot } from './Robot';
 import { Facility } from './Facility';
 import { GhostTrajectory } from './GhostTrajectory';
+import { Effects } from './Effects';
 import { FullBodyKinematicState } from '@/lib/robot/kinematics';
 import { StabilityAnalysisResult } from '@/lib/robot/stability';
 import { LocomotionPathPoint } from '@/lib/robot/locomotion';
@@ -37,6 +39,32 @@ export default function Viewport({
   showTargetGizmos = false,
   showSupportPolygon = true,
 }: ViewportProps) {
+  // WebGL context-loss recovery (Phase 10 §10 "Robustness"). The GPU driver
+  // can drop the context under memory pressure or a tab-suspend/resume; the
+  // canvas goes black silently unless we listen for it ourselves.
+  const [contextLost, setContextLost] = useState(false);
+  const [canvasKey, setCanvasKey] = useState(0);
+
+  const handleCreated = useCallback(({ gl }: { gl: THREE.WebGLRenderer }) => {
+    const canvasEl = gl.domElement;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      console.warn('[A.E.G.I.S] WebGL context lost.');
+      setContextLost(true);
+    };
+    const onRestored = () => {
+      console.info('[A.E.G.I.S] WebGL context restored.');
+      setContextLost(false);
+    };
+    canvasEl.addEventListener('webglcontextlost', onLost, false);
+    canvasEl.addEventListener('webglcontextrestored', onRestored, false);
+  }, []);
+
+  const handleReloadCanvas = () => {
+    setContextLost(false);
+    setCanvasKey((k) => k + 1);
+  };
+
   // Convert support polygon vertices to 3D line points on the ground plane
   const polygonPoints = useMemo(() => {
     if (!stabilityState || stabilityState.supportPolygon.length === 0) return [];
@@ -58,15 +86,43 @@ export default function Viewport({
     });
   }, [pathPoints]);
 
+  if (contextLost) {
+    return (
+      <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
+        <div className="flex flex-col items-center justify-center gap-4 w-full h-full text-foreground font-mono text-xs px-6 text-center">
+          <WifiOff className="w-8 h-8 text-accent-amber" />
+          <div className="max-w-md space-y-1.5">
+            <div className="text-sm font-semibold text-accent-amber">WEBGL CONTEXT LOST</div>
+            <p className="text-foreground-muted leading-relaxed">
+              The GPU rendering context was dropped by the browser (common after tab
+              suspension or a driver reset). Mission state is preserved — reload the
+              canvas to resume rendering.
+            </p>
+          </div>
+          <button
+            onClick={handleReloadCanvas}
+            className="flex items-center gap-2 px-4 py-2 rounded bg-accent-teal hover:bg-accent-teal/80 text-foreground font-semibold transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>RELOAD CANVAS</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
       <Canvas
+        key={canvasKey}
         camera={{ position: [8, 12, 18], fov: 45 }}
         shadows
+        dpr={[1, 2]}
         gl={{
           antialias: true,
           powerPreference: 'high-performance',
         }}
+        onCreated={handleCreated}
       >
         <color attach="background" args={['#14171A']} />
 
@@ -173,6 +229,9 @@ export default function Viewport({
 
         {/* Telemetry and Frame Metrics Tracker */}
         <SceneMetricsTracker />
+
+        {/* Quality-gated Postprocessing (§1.5, §2, Phase 10) */}
+        <Effects />
       </Canvas>
     </div>
   );

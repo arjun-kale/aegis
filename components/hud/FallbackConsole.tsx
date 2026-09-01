@@ -78,11 +78,10 @@ const TOOL_PAYLOAD_PRESETS: Record<string, { label: string; payload: any }[]> = 
       },
     },
     {
-      label: 'Stage Walk with Auto-Approve Policy (>0.50)',
+      label: 'Stage Walk to Vault Alcove [2, 0, 2]',
       payload: {
         target_waypoint: [2, 0, 2],
         gait_profile: 'CAUTIOUS_STEP',
-        auto_approve_if_margin_above: 0.5,
       },
     },
   ],

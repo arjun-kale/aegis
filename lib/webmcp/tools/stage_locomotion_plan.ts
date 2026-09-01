@@ -81,7 +81,7 @@ export const stageLocomotionPlanTool: WebMcpTool = {
     target_waypoint: [number, number, number];
     gait_profile: GaitProfileName;
   }) => {
-    const { target_waypoint, gait_profile } = args;
+    const { target_waypoint, gait_profile } = args ?? ({} as typeof args);
 
     if (!Array.isArray(target_waypoint) || target_waypoint.length !== 3) {
       return formatFailureResponse(

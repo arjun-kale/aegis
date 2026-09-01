@@ -11,6 +11,7 @@ export type ApprovalStatus =
   | 'COMPLETED';
 
 export type AutonomyMode = 'MANUAL_APPROVAL' | 'AUTO_APPROVE_SAFE';
+export type QualityMode = 'PERFORMANCE' | 'HIGH';
 
 export interface Waypoint {
   x: number;
@@ -81,6 +82,9 @@ export interface MissionState {
   facilitySeed: number;
   disassemblyFactor: number;
 
+  // Rendering Quality (Phase 10 — postprocessing toggle, default off)
+  qualityMode: QualityMode;
+
   // Actions
   stageProposal: (proposal: StagedProposal) => void;
   clearProposal: () => void;
@@ -99,6 +103,7 @@ export interface MissionState {
   batchUpdateExplorationCells: (cells: Record<string, CellExplorationStatus>) => void;
   setDisassemblyFactor: (factor: number) => void;
   setFacilitySeed: (seed: number) => void;
+  setQualityMode: (mode: QualityMode) => void;
   resetMission: () => void;
 }
 
@@ -159,6 +164,7 @@ export const useMissionStore = create<MissionState>()(
     scannedCellsCount: 0,
     facilitySeed: 42,
     disassemblyFactor: 0.0,
+    qualityMode: 'PERFORMANCE',
 
     stageProposal: (proposal) =>
       set((state) => ({
@@ -292,6 +298,11 @@ export const useMissionStore = create<MissionState>()(
     setFacilitySeed: (seed) =>
       set(() => ({
         facilitySeed: seed,
+      })),
+
+    setQualityMode: (mode) =>
+      set(() => ({
+        qualityMode: mode,
       })),
 
     resetMission: () =>

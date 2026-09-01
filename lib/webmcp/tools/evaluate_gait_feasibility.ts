@@ -65,12 +65,25 @@ export const evaluateGaitFeasibilityTool: WebMcpTool = {
     path: [number, number, number][];
     gait_profile: GaitProfileName;
   }) => {
-    const { path, gait_profile } = args;
+    const { path, gait_profile } = args ?? ({} as typeof args);
 
     if (!Array.isArray(path) || path.length < 2) {
       return formatFailureResponse(
         'INVALID_PARAMETER',
         'Parameter path must contain at least 2 coordinate waypoints.'
+      );
+    }
+
+    const hasMalformedWaypoint = path.some(
+      (wp) =>
+        !Array.isArray(wp) ||
+        wp.length !== 3 ||
+        wp.some((n) => typeof n !== 'number' || !Number.isFinite(n))
+    );
+    if (hasMalformedWaypoint) {
+      return formatFailureResponse(
+        'INVALID_PARAMETER',
+        'Every element of path must be a 3-element finite-number coordinate array [x, y, z].'
       );
     }
 

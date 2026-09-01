@@ -95,7 +95,7 @@ export const scanSpatialEnvironmentTool: WebMcpTool = {
     ],
   },
   execute: async (args: { scan_mode: 'fast' | 'high_res'; range_m: number }) => {
-    const { scan_mode, range_m } = args;
+    const { scan_mode, range_m } = args ?? ({} as typeof args);
 
     // 1. Validate Sensor Range Bounds
     if (typeof range_m !== 'number' || isNaN(range_m)) {

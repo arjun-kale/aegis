@@ -51,7 +51,7 @@ export const executeStagedProposalTool: WebMcpTool = {
     required: ['proposal_id', 'status', 'message', 'waypoints_count'],
   },
   execute: async (args: { proposal_id: string }) => {
-    const { proposal_id } = args;
+    const { proposal_id } = args ?? ({} as typeof args);
 
     if (!proposal_id || typeof proposal_id !== 'string') {
       return formatFailureResponse(

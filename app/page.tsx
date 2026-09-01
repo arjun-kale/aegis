@@ -13,7 +13,8 @@ import { TelemetryPanel } from '@/components/hud/TelemetryPanel';
 import { ToolCallLog } from '@/components/hud/ToolCallLog';
 import { EngineeringViewHUD } from '@/components/hud/EngineeringViewHUD';
 import { MissionExportModal } from '@/components/hud/MissionExportModal';
-import { registerWebMcpTools } from '@/lib/webmcp/register';
+import { ViewportErrorBoundary } from '@/components/viewport/ViewportErrorBoundary';
+import { registerWebMcpTools, resolveModelContext } from '@/lib/webmcp/register';
 import {
   FullBodyPoseTargets,
   solveFullBodyKinematics,
@@ -167,19 +168,45 @@ export default function Home() {
     }
   };
 
-  // Real-time animation loop when walking or executing
+  // Real-time animation loop when walking or executing.
+  //
+  // Fixed simulation timestep with an accumulator (§10 "Determinism"): the
+  // mission clock advances in constant 1/60s quanta rather than the raw
+  // rAF delta, so a given wall-clock duration always produces the same
+  // number of simulation ticks regardless of the render framerate. A
+  // single frame's real delta is clamped to 250ms and the catch-up loop
+  // capped at MAX_STEPS_PER_FRAME so a tab-suspend/resume or a debugger
+  // pause doesn't fire a "spiral of death" burst of steps on resume.
+  const FIXED_DT = 1 / 60;
+  const MAX_STEPS_PER_FRAME = 5;
   const lastTimeRef = useRef<number>(performance.now());
+  const accumulatorRef = useRef<number>(0);
+
   useEffect(() => {
     const shouldAnimate = isPlaying || approvalStatus === 'EXECUTING';
     if (!shouldAnimate) return;
 
     let animId: number;
     lastTimeRef.current = performance.now();
+    accumulatorRef.current = 0;
 
     const loop = (now: number) => {
-      const deltaSec = (now - lastTimeRef.current) / 1000;
+      const frameDeltaSec = Math.min((now - lastTimeRef.current) / 1000, 0.25);
       lastTimeRef.current = now;
-      setElapsedSimTime((prev) => prev + deltaSec);
+      accumulatorRef.current += frameDeltaSec;
+
+      let advancedSec = 0;
+      let steps = 0;
+      while (accumulatorRef.current >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
+        accumulatorRef.current -= FIXED_DT;
+        advancedSec += FIXED_DT;
+        steps += 1;
+      }
+
+      if (advancedSec > 0) {
+        setElapsedSimTime((prev) => prev + advancedSec);
+      }
+
       animId = requestAnimationFrame(loop);
     };
 
@@ -187,8 +214,24 @@ export default function Home() {
     return () => cancelAnimationFrame(animId);
   }, [isPlaying, approvalStatus]);
 
-  // Lifetime-scoped WebMCP tool registration
+  // Lifetime-scoped WebMCP tool registration. Degrade honestly rather than
+  // silently: when no WebMCP agent context is present (unsupported browser,
+  // or a non-secure origin), record it in the audit log so the operator
+  // sees why the console starts in fallback mode instead of guessing.
   useEffect(() => {
+    const mc = resolveModelContext();
+    if (!mc) {
+      useMissionStore.getState().addLogEntry({
+        type: 'SYSTEM',
+        source: 'SYSTEM',
+        title: 'WebMCP Agent Context Unavailable',
+        detail: window.isSecureContext
+          ? 'No navigator.modelContext was found. Degrading to the fallback console — every tool remains invokable by hand.'
+          : 'This origin is not a SecureContext, so navigator.modelContext is unavailable per the WebMCP spec. Degrading to the fallback console.',
+        status: 'INFO',
+      });
+    }
+
     const unregister = registerWebMcpTools();
     return () => {
       unregister();
@@ -276,17 +319,19 @@ export default function Home() {
 
       {/* Main 3D Viewport Subtree */}
       <div className="w-full h-full pt-10">
-        <Viewport
-          pose={currentPose}
-          stabilityState={currentStability}
-          pathPoints={navPathResult.path.length > 1 ? navPathResult.path : activePath}
-          facilityData={facilityData}
-          mechanismStates={mechanisms}
-          unexploredFrontiers={unexploredFrontiers}
-          stagedProposal={stagedProposal}
-          showTargetGizmos={isIkDevOpen}
-          showSupportPolygon={true}
-        />
+        <ViewportErrorBoundary>
+          <Viewport
+            pose={currentPose}
+            stabilityState={currentStability}
+            pathPoints={navPathResult.path.length > 1 ? navPathResult.path : activePath}
+            facilityData={facilityData}
+            mechanismStates={mechanisms}
+            unexploredFrontiers={unexploredFrontiers}
+            stagedProposal={stagedProposal}
+            showTargetGizmos={isIkDevOpen}
+            showSupportPolygon={true}
+          />
+        </ViewportErrorBoundary>
       </div>
 
       {/* Mission Plan Export & Replay Modal (§9) */}

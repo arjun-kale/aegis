@@ -55,7 +55,25 @@ export const overrideFacilityMechanismTool: WebMcpTool = {
     command: string;
     authorization_code?: string;
   }) => {
-    const { mechanism_id, command, authorization_code } = args;
+    const { mechanism_id, command, authorization_code } = args ?? ({} as typeof args);
+
+    if (typeof mechanism_id !== 'string' || mechanism_id.length === 0) {
+      return formatFailureResponse(
+        'INVALID_PARAMETER',
+        'Parameter mechanism_id is required and must be a non-empty string.',
+        false,
+        `Valid mechanism IDs: ${Object.keys(FACILITY_MECHANISMS).join(', ')}`
+      );
+    }
+
+    if (typeof command !== 'string' || command.length === 0) {
+      return formatFailureResponse(
+        'INVALID_PARAMETER',
+        'Parameter command is required and must be a non-empty string.',
+        false,
+        'Valid commands: DEACTIVATE, ACTIVATE, RAISE, LOWER, DIVERT_POWER, SEAL'
+      );
+    }
 
     const def = FACILITY_MECHANISMS[mechanism_id];
     if (!def) {

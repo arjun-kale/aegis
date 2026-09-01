@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { FpsCounter } from './FpsCounter';
 import { resolveModelContext, ACTIVE_TOOLS } from '@/lib/webmcp/register';
+import { useMissionStore } from '@/lib/state/missionStore';
 import {
   Shield,
   Radio,
@@ -15,6 +16,7 @@ import {
   ListFilter,
   Layers,
   FileJson,
+  Sparkles,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -60,6 +62,8 @@ export function Header({
 }: HeaderProps) {
   const [hasWebMcp, setHasWebMcp] = useState<boolean | null>(null);
   const [isSecure, setIsSecure] = useState<boolean>(true);
+  const qualityMode = useMissionStore((state) => state.qualityMode);
+  const setQualityMode = useMissionStore((state) => state.setQualityMode);
 
   useEffect(() => {
     const mc = resolveModelContext();
@@ -80,7 +84,7 @@ export function Header({
               A.E.G.I.S
             </span>
             <span className="text-[10px] px-1.5 py-0.5 bg-[#14171A] border border-[#262B30] text-[#8E99A2] uppercase tracking-widest">
-              v0.1.0 • Phase 9
+              v0.1.0 • Phase 10
             </span>
           </div>
           <div className="text-[10px] text-[#8E99A2]">
@@ -91,28 +95,35 @@ export function Header({
 
       {/* Center Status Indicators */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-2.5 py-1 bg-[#14171A] border border-[#262B30] text-xs">
-          <Radio
-            className={`w-3.5 h-3.5 ${
-              hasWebMcp ? 'text-accent-teal animate-pulse' : 'text-[#8E99A2]'
-            }`}
-          />
-          <span className="text-[#8E99A2]">WebMCP:</span>
-          <span
-            className={`font-semibold ${
-              hasWebMcp ? 'text-accent-teal' : 'text-accent-amber'
-            }`}
+        {hasWebMcp === false ? (
+          <button
+            onClick={onToggleConsole}
+            title="No WebMCP-capable agent context was detected on this page (or the origin is not a secure context). Degrading gracefully: use the fallback console below to invoke every tool by hand — it calls the exact same execute() handlers an agent would."
+            className="flex items-center gap-2 px-2.5 py-1 bg-[#14171A] border border-accent-amber/60 text-xs hover:bg-[#262B30] transition-colors cursor-help"
           >
-            {hasWebMcp === null
-              ? 'DETECTING...'
-              : hasWebMcp
-              ? `CONNECTED (${ACTIVE_TOOLS.length} TOOLS)`
-              : 'FALLBACK_HARNESS'}
-          </span>
-          {!isSecure && (
-            <span className="text-[10px] text-accent-red ml-1">(INSECURE_ORIGIN)</span>
-          )}
-        </div>
+            <Radio className="w-3.5 h-3.5 text-[#8E99A2]" />
+            <span className="text-[#8E99A2]">WebMCP:</span>
+            <span className="font-semibold text-accent-amber">FALLBACK_HARNESS</span>
+            <span className="text-[10px] text-[#8E99A2] ml-1 underline">open console</span>
+            {!isSecure && (
+              <span className="text-[10px] text-accent-red ml-1">(INSECURE_ORIGIN)</span>
+            )}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-[#14171A] border border-[#262B30] text-xs">
+            <Radio
+              className={`w-3.5 h-3.5 ${
+                hasWebMcp ? 'text-accent-teal animate-pulse' : 'text-[#8E99A2]'
+              }`}
+            />
+            <span className="text-[#8E99A2]">WebMCP:</span>
+            <span
+              className={`font-semibold ${hasWebMcp ? 'text-accent-teal' : 'text-[#8E99A2]'}`}
+            >
+              {hasWebMcp === null ? 'DETECTING...' : `CONNECTED (${ACTIVE_TOOLS.length} TOOLS)`}
+            </span>
+          </div>
+        )}
 
         <FpsCounter />
       </div>
@@ -216,6 +227,19 @@ export function Header({
         >
           <Sliders className="w-3.5 h-3.5" />
           <span>IK RIG</span>
+        </button>
+
+        <button
+          onClick={() => setQualityMode(qualityMode === 'HIGH' ? 'PERFORMANCE' : 'HIGH')}
+          title="Toggle postprocessing quality (Bloom + Vignette). Default off to protect framerate."
+          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-colors border ${
+            qualityMode === 'HIGH'
+              ? 'bg-accent-teal/20 border-accent-teal text-accent-teal'
+              : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#E8E3DA]'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{qualityMode === 'HIGH' ? 'QUALITY: HIGH' : 'QUALITY: PERF'}</span>
         </button>
 
         <button
