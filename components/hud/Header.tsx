@@ -3,14 +3,21 @@
 import React, { useEffect, useState } from 'react';
 import { FpsCounter } from './FpsCounter';
 import { resolveModelContext } from '@/lib/webmcp/register';
-import { Shield, Radio, Terminal, Cpu } from 'lucide-react';
+import { Shield, Radio, Terminal, Activity } from 'lucide-react';
 
 interface HeaderProps {
   onToggleConsole: () => void;
   isConsoleOpen: boolean;
+  onToggleFrameTime: () => void;
+  isFrameTimeOpen: boolean;
 }
 
-export function Header({ onToggleConsole, isConsoleOpen }: HeaderProps) {
+export function Header({
+  onToggleConsole,
+  isConsoleOpen,
+  onToggleFrameTime,
+  isFrameTimeOpen,
+}: HeaderProps) {
   const [hasWebMcp, setHasWebMcp] = useState<boolean | null>(null);
   const [isSecure, setIsSecure] = useState<boolean>(true);
 
@@ -33,7 +40,7 @@ export function Header({ onToggleConsole, isConsoleOpen }: HeaderProps) {
               A.E.G.I.S
             </span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-surface-raised border border-surface-border text-foreground-muted uppercase tracking-widest font-mono">
-              v0.1.0 • Phase 0
+              v0.1.0 • Phase 1
             </span>
           </div>
           <div className="text-[11px] text-foreground-muted">
@@ -72,6 +79,19 @@ export function Header({ onToggleConsole, isConsoleOpen }: HeaderProps) {
 
       {/* Right Controls */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleFrameTime}
+          title="Toggle Frame Time Dev Graph (F2)"
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-mono transition-colors border ${
+            isFrameTimeOpen
+              ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan'
+              : 'bg-surface-raised hover:bg-surface border-surface-border text-foreground'
+          }`}
+        >
+          <Activity className="w-3.5 h-3.5" />
+          <span>FRAME TIME</span>
+        </button>
+
         <button
           onClick={onToggleConsole}
           className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-mono transition-colors border ${
