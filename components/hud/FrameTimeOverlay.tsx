@@ -126,7 +126,7 @@ export function FrameTimeOverlay({ isOpen, onClose }: FrameTimeOverlayProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed left-4 top-[100px] bottom-4 z-30 flex flex-col bg-[#1E2226] border border-[#262B30] shadow-2xl overflow-hidden font-mono text-xs w-[360px] max-w-[calc(100vw-32px)]">
+    <div className="fixed left-4 top-[100px] bottom-4 z-30 flex flex-col bg-[#FFFFFF] border border-[#DDE1E6] shadow-2xl overflow-hidden font-mono text-xs w-[360px] max-w-[calc(100vw-32px)]">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold">
@@ -142,7 +142,7 @@ export function FrameTimeOverlay({ isOpen, onClose }: FrameTimeOverlayProps) {
       </div>
 
       {/* Chart Canvas */}
-      <div className="p-3 bg-[#0E1012] flex flex-col gap-2">
+      <div className="p-3 bg-[#ECEEF1] flex flex-col gap-2">
         <div className="relative">
           <canvas
             ref={canvasRef}

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
-import { Html } from '@react-three/drei';
+import { Html, RoundedBox } from '@react-three/drei';
 import { ROBOT_RIG } from '@/lib/robot/rig';
 import { FullBodyKinematicState } from '@/lib/robot/kinematics';
 import { useMissionStore } from '@/lib/state/missionStore';
@@ -18,7 +18,10 @@ interface RobotProps {
  * Procedural Bipedal Robot Component (§1.2, §8)
  *
  * Hard-surface primitive hierarchy constructed from ROBOT_RIG data and driven
- * directly by analytical IK solutions.
+ * directly by analytical IK solutions. Body volumes use RoundedBox (a small
+ * bevel radius) rather than sharp boxGeometry — primitive-built robots read
+ * as "papercraft" with knife-edge corners; a subtle bevel catches specular
+ * highlights and reads as manufactured hard-surface instead.
  * Supports smooth outward exploded engineering view (§8) with live joint stress visualization.
  */
 export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
@@ -109,26 +112,27 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
       {/* --- TORSO & CHASSIS --- */}
       <group position={torsoPosition} rotation={torsoRotationEuler}>
         {/* Main Torso Block */}
-        <mesh castShadow receiveShadow>
-          <boxGeometry args={ROBOT_RIG.parts.torso.dimensions} />
-          <meshStandardMaterial color="#262B30" roughness={0.35} metalness={0.65} />
-        </mesh>
+        <RoundedBox args={ROBOT_RIG.parts.torso.dimensions} radius={0.014} smoothness={4} castShadow receiveShadow>
+          <meshStandardMaterial color="#262B30" roughness={0.3} metalness={0.7} />
+        </RoundedBox>
 
         {/* Chest Armor Plate (Displaces forward in exploded view) */}
-        <mesh
+        <RoundedBox
+          args={[0.26, 0.24, 0.02]}
+          radius={0.012}
+          smoothness={4}
           position={[dispChest[0], 0.04 + dispChest[1], 0.115 + dispChest[2]]}
           castShadow
           receiveShadow
         >
-          <boxGeometry args={[0.26, 0.24, 0.02]} />
           <meshStandardMaterial
             color="#1E2226"
-            roughness={0.3}
-            metalness={0.8}
+            roughness={0.25}
+            metalness={0.85}
             emissive="#3E7C79"
             emissiveIntensity={0.15}
           />
-        </mesh>
+        </RoundedBox>
 
         {/* Power Core LED Reactor */}
         <mesh position={[dispChest[0], 0.04 + dispChest[1], 0.128 + dispChest[2]]}>
@@ -145,10 +149,9 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           ]}
           rotation={headRotationEuler}
         >
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={ROBOT_RIG.parts.head.dimensions} />
-            <meshStandardMaterial color="#1E2226" roughness={0.25} metalness={0.85} />
-          </mesh>
+          <RoundedBox args={ROBOT_RIG.parts.head.dimensions} radius={0.01} smoothness={4} castShadow receiveShadow>
+            <meshStandardMaterial color="#1E2226" roughness={0.2} metalness={0.9} />
+          </RoundedBox>
           {/* Visor / Optical Bar */}
           <mesh position={[0, 0.01, 0.092]}>
             <boxGeometry args={[0.13, 0.025, 0.01]} />
@@ -158,7 +161,7 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           {/* Billboarded Label in Exploded View */}
           {df >= 0.25 && (
             <Html position={[0, 0.22, 0]} center distanceFactor={12}>
-              <div className="bg-[#14171A]/90 border border-[#262B30] text-[#E8E3DA] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
+              <div className="bg-[#F1F2F5]/90 border border-[#DDE1E6] text-[#1B1F24] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
                 <span className="text-accent-tealText font-bold">LIDAR / OPTICS</span> [75°C]
               </div>
             </Html>
@@ -174,11 +177,11 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           ]}
           castShadow
         >
-          <sphereGeometry args={[0.055, 16, 16]} />
+          <sphereGeometry args={[0.055, 20, 20]} />
           <meshStandardMaterial
             color="#4A525D"
-            metalness={0.8}
-            roughness={0.3}
+            metalness={0.85}
+            roughness={0.25}
             emissive={hipLStress.color}
             emissiveIntensity={hipLStress.intensity}
           />
@@ -191,11 +194,11 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           ]}
           castShadow
         >
-          <sphereGeometry args={[0.055, 16, 16]} />
+          <sphereGeometry args={[0.055, 20, 20]} />
           <meshStandardMaterial
             color="#4A525D"
-            metalness={0.8}
-            roughness={0.3}
+            metalness={0.85}
+            roughness={0.25}
             emissive={hipRStress.color}
             emissiveIntensity={hipRStress.intensity}
           />
@@ -210,8 +213,8 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           ]}
           castShadow
         >
-          <sphereGeometry args={[0.048, 16, 16]} />
-          <meshStandardMaterial color="#4A525D" metalness={0.8} roughness={0.3} />
+          <sphereGeometry args={[0.048, 20, 20]} />
+          <meshStandardMaterial color="#4A525D" metalness={0.85} roughness={0.25} />
         </mesh>
         <mesh
           position={[
@@ -221,8 +224,8 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           ]}
           castShadow
         >
-          <sphereGeometry args={[0.048, 16, 16]} />
-          <meshStandardMaterial color="#4A525D" metalness={0.8} roughness={0.3} />
+          <sphereGeometry args={[0.048, 20, 20]} />
+          <meshStandardMaterial color="#4A525D" metalness={0.85} roughness={0.25} />
         </mesh>
       </group>
 
@@ -236,10 +239,16 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={legLUpperQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.legL.l1 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.10, ROBOT_RIG.limbs.legL.l1, 0.11]} />
-          <meshStandardMaterial color="#262B30" metalness={0.6} roughness={0.4} />
-        </mesh>
+        <RoundedBox
+          args={[0.10, ROBOT_RIG.limbs.legL.l1, 0.11]}
+          radius={0.009}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.legL.l1 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#262B30" metalness={0.65} roughness={0.35} />
+        </RoundedBox>
       </group>
 
       {/* Knee L Joint Sphere */}
@@ -251,17 +260,17 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         castShadow
       >
-        <sphereGeometry args={[0.052, 16, 16]} />
+        <sphereGeometry args={[0.052, 20, 20]} />
         <meshStandardMaterial
           color="#4A525D"
-          metalness={0.85}
-          roughness={0.25}
+          metalness={0.9}
+          roughness={0.2}
           emissive={kneeLStress.color}
           emissiveIntensity={kneeLStress.intensity}
         />
         {df >= 0.25 && (
           <Html position={[0, 0.15, 0]} center distanceFactor={12}>
-            <div className="bg-[#14171A]/90 border border-[#262B30] text-[#E8E3DA] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
+            <div className="bg-[#F1F2F5]/90 border border-[#DDE1E6] text-[#1B1F24] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
               <span className="text-accent-amber font-bold">KNEE_L</span> [{torqueKneeL.toFixed(0)} N·m]
             </div>
           </Html>
@@ -277,10 +286,16 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={legLLowerQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.legL.l2 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.085, ROBOT_RIG.limbs.legL.l2, 0.095]} />
-          <meshStandardMaterial color="#1E2226" metalness={0.65} roughness={0.35} />
-        </mesh>
+        <RoundedBox
+          args={[0.085, ROBOT_RIG.limbs.legL.l2, 0.095]}
+          radius={0.008}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.legL.l2 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#1E2226" metalness={0.7} roughness={0.3} />
+        </RoundedBox>
       </group>
 
       {/* Foot L Plate */}
@@ -291,16 +306,22 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           legL.end[2] + dispFootL[2],
         ]}
       >
-        <mesh position={[0, 0.025, 0.03]} castShadow receiveShadow>
-          <boxGeometry args={ROBOT_RIG.parts.foot_l.dimensions} />
+        <RoundedBox
+          args={ROBOT_RIG.parts.foot_l.dimensions}
+          radius={0.01}
+          smoothness={4}
+          position={[0, 0.025, 0.03]}
+          castShadow
+          receiveShadow
+        >
           <meshStandardMaterial
             color="#14171A"
-            metalness={0.9}
-            roughness={0.2}
+            metalness={0.92}
+            roughness={0.18}
             emissive="#3E7C79"
             emissiveIntensity={0.15}
           />
-        </mesh>
+        </RoundedBox>
       </group>
 
       {/* --- RIGHT LEG --- */}
@@ -313,10 +334,16 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={legRUpperQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.legR.l1 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.10, ROBOT_RIG.limbs.legR.l1, 0.11]} />
-          <meshStandardMaterial color="#262B30" metalness={0.6} roughness={0.4} />
-        </mesh>
+        <RoundedBox
+          args={[0.10, ROBOT_RIG.limbs.legR.l1, 0.11]}
+          radius={0.009}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.legR.l1 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#262B30" metalness={0.65} roughness={0.35} />
+        </RoundedBox>
       </group>
 
       {/* Knee R Joint Sphere */}
@@ -328,17 +355,17 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         castShadow
       >
-        <sphereGeometry args={[0.052, 16, 16]} />
+        <sphereGeometry args={[0.052, 20, 20]} />
         <meshStandardMaterial
           color="#4A525D"
-          metalness={0.85}
-          roughness={0.25}
+          metalness={0.9}
+          roughness={0.2}
           emissive={kneeRStress.color}
           emissiveIntensity={kneeRStress.intensity}
         />
         {df >= 0.25 && (
           <Html position={[0, 0.15, 0]} center distanceFactor={12}>
-            <div className="bg-[#14171A]/90 border border-[#262B30] text-[#E8E3DA] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
+            <div className="bg-[#F1F2F5]/90 border border-[#DDE1E6] text-[#1B1F24] font-mono text-[9px] px-1.5 py-0.5 whitespace-nowrap pointer-events-none select-none shadow">
               <span className="text-accent-amber font-bold">KNEE_R</span> [{torqueKneeR.toFixed(0)} N·m]
             </div>
           </Html>
@@ -354,10 +381,16 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={legRLowerQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.legR.l2 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.085, ROBOT_RIG.limbs.legR.l2, 0.095]} />
-          <meshStandardMaterial color="#1E2226" metalness={0.65} roughness={0.35} />
-        </mesh>
+        <RoundedBox
+          args={[0.085, ROBOT_RIG.limbs.legR.l2, 0.095]}
+          radius={0.008}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.legR.l2 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#1E2226" metalness={0.7} roughness={0.3} />
+        </RoundedBox>
       </group>
 
       {/* Foot R Plate */}
@@ -368,16 +401,22 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
           legR.end[2] + dispFootR[2],
         ]}
       >
-        <mesh position={[0, 0.025, 0.03]} castShadow receiveShadow>
-          <boxGeometry args={ROBOT_RIG.parts.foot_r.dimensions} />
+        <RoundedBox
+          args={ROBOT_RIG.parts.foot_r.dimensions}
+          radius={0.01}
+          smoothness={4}
+          position={[0, 0.025, 0.03]}
+          castShadow
+          receiveShadow
+        >
           <meshStandardMaterial
             color="#14171A"
-            metalness={0.9}
-            roughness={0.2}
+            metalness={0.92}
+            roughness={0.18}
             emissive="#3E7C79"
             emissiveIntensity={0.15}
           />
-        </mesh>
+        </RoundedBox>
       </group>
 
       {/* --- LEFT ARM --- */}
@@ -390,10 +429,16 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={armLUpperQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.armL.l1 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.075, ROBOT_RIG.limbs.armL.l1, 0.075]} />
-          <meshStandardMaterial color="#262B30" metalness={0.6} roughness={0.4} />
-        </mesh>
+        <RoundedBox
+          args={[0.075, ROBOT_RIG.limbs.armL.l1, 0.075]}
+          radius={0.008}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.armL.l1 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#262B30" metalness={0.65} roughness={0.35} />
+        </RoundedBox>
       </group>
 
       {/* Elbow L */}
@@ -405,8 +450,8 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         castShadow
       >
-        <sphereGeometry args={[0.042, 16, 16]} />
-        <meshStandardMaterial color="#4A525D" metalness={0.8} roughness={0.3} />
+        <sphereGeometry args={[0.042, 20, 20]} />
+        <meshStandardMaterial color="#4A525D" metalness={0.85} roughness={0.25} />
       </mesh>
 
       {/* Forearm L */}
@@ -418,14 +463,23 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={armLLowerQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.armL.l2 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.065, ROBOT_RIG.limbs.armL.l2, 0.065]} />
-          <meshStandardMaterial color="#1E2226" metalness={0.65} roughness={0.35} />
-        </mesh>
+        <RoundedBox
+          args={[0.065, ROBOT_RIG.limbs.armL.l2, 0.065]}
+          radius={0.007}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.armL.l2 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#1E2226" metalness={0.7} roughness={0.3} />
+        </RoundedBox>
       </group>
 
       {/* Hand L Gripper */}
-      <mesh
+      <RoundedBox
+        args={ROBOT_RIG.parts.hand_l.dimensions}
+        radius={0.006}
+        smoothness={4}
         position={[
           armL.end[0] + dispHandL[0],
           armL.end[1] + dispHandL[1],
@@ -433,9 +487,8 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         castShadow
       >
-        <boxGeometry args={ROBOT_RIG.parts.hand_l.dimensions} />
-        <meshStandardMaterial color="#333A42" metalness={0.8} roughness={0.3} />
-      </mesh>
+        <meshStandardMaterial color="#333A42" metalness={0.85} roughness={0.25} />
+      </RoundedBox>
 
       {/* --- RIGHT ARM --- */}
       {/* Upper Arm R */}
@@ -447,10 +500,16 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={armRUpperQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.armR.l1 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.075, ROBOT_RIG.limbs.armR.l1, 0.075]} />
-          <meshStandardMaterial color="#262B30" metalness={0.6} roughness={0.4} />
-        </mesh>
+        <RoundedBox
+          args={[0.075, ROBOT_RIG.limbs.armR.l1, 0.075]}
+          radius={0.008}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.armR.l1 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#262B30" metalness={0.65} roughness={0.35} />
+        </RoundedBox>
       </group>
 
       {/* Elbow R */}
@@ -462,8 +521,8 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         castShadow
       >
-        <sphereGeometry args={[0.042, 16, 16]} />
-        <meshStandardMaterial color="#4A525D" metalness={0.8} roughness={0.3} />
+        <sphereGeometry args={[0.042, 20, 20]} />
+        <meshStandardMaterial color="#4A525D" metalness={0.85} roughness={0.25} />
       </mesh>
 
       {/* Forearm R */}
@@ -475,14 +534,23 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         quaternion={armRLowerQuat}
       >
-        <mesh position={[0, -ROBOT_RIG.limbs.armR.l2 / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.065, ROBOT_RIG.limbs.armR.l2, 0.065]} />
-          <meshStandardMaterial color="#1E2226" metalness={0.65} roughness={0.35} />
-        </mesh>
+        <RoundedBox
+          args={[0.065, ROBOT_RIG.limbs.armR.l2, 0.065]}
+          radius={0.007}
+          smoothness={4}
+          position={[0, -ROBOT_RIG.limbs.armR.l2 / 2, 0]}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial color="#1E2226" metalness={0.7} roughness={0.3} />
+        </RoundedBox>
       </group>
 
       {/* Hand R Gripper */}
-      <mesh
+      <RoundedBox
+        args={ROBOT_RIG.parts.hand_r.dimensions}
+        radius={0.006}
+        smoothness={4}
         position={[
           armR.end[0] + dispHandR[0],
           armR.end[1] + dispHandR[1],
@@ -490,9 +558,8 @@ export function Robot({ pose, showTargetGizmos = false }: RobotProps) {
         ]}
         castShadow
       >
-        <boxGeometry args={ROBOT_RIG.parts.hand_r.dimensions} />
-        <meshStandardMaterial color="#333A42" metalness={0.8} roughness={0.3} />
-      </mesh>
+        <meshStandardMaterial color="#333A42" metalness={0.85} roughness={0.25} />
+      </RoundedBox>
 
       {/* --- TARGET GIZMOS (DEV MODE) --- */}
       {showTargetGizmos && (

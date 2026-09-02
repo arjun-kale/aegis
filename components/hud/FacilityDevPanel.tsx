@@ -47,7 +47,7 @@ export function FacilityDevPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed right-4 top-[100px] bottom-4 w-[400px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#1E2226] border border-[#262B30] shadow-2xl overflow-hidden font-mono text-xs select-none">
+    <div className="fixed right-4 top-[100px] bottom-4 w-[400px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#FFFFFF] border border-[#DDE1E6] shadow-2xl overflow-hidden font-mono text-xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold">
@@ -120,7 +120,7 @@ export function FacilityDevPanel({
                       }
                       className={`px-2.5 py-1 rounded text-[11px] font-bold border transition-colors ${
                         state === 'ARMED'
-                          ? 'bg-[#14171A] border-accent-red text-accent-redText hover:bg-[#262B30]'
+                          ? 'bg-[#F1F2F5] border-accent-red text-accent-redText hover:bg-[#EDEFF2]'
                           : 'bg-accent-green/20 border-accent-green text-accent-green hover:bg-accent-green/30'
                       }`}
                     >
@@ -200,7 +200,7 @@ export function FacilityDevPanel({
           </div>
 
           {/* A* Query Result Box */}
-          <div className="p-3 rounded bg-[#0E1012] border border-surface-border space-y-1.5 text-[11px]">
+          <div className="p-3 rounded bg-[#ECEEF1] border border-surface-border space-y-1.5 text-[11px]">
             {navPathResult.blockedBy ? (
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-accent-redText font-bold">
@@ -244,11 +244,11 @@ export function FacilityDevPanel({
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-[10px]">
-            <div className="p-2 rounded bg-[#0E1012] border border-surface-border">
+            <div className="p-2 rounded bg-[#ECEEF1] border border-surface-border">
               <div className="text-foreground-muted">SCANNED CELLS:</div>
               <div className="text-foreground font-bold text-xs">{scannedCellsCount}</div>
             </div>
-            <div className="p-2 rounded bg-[#0E1012] border border-surface-border">
+            <div className="p-2 rounded bg-[#ECEEF1] border border-surface-border">
               <div className="text-foreground-muted">FRONTIERS:</div>
               <div className="text-accent-cyan font-bold text-xs">{unexploredFrontiersCount}</div>
             </div>

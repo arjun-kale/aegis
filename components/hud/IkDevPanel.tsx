@@ -103,7 +103,7 @@ export function IkDevPanel({
   };
 
   return (
-    <div className="fixed left-4 top-[100px] bottom-4 w-[360px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#1E2226] border border-[#262B30] shadow-2xl overflow-hidden font-mono text-xs select-none">
+    <div className="fixed left-4 top-[100px] bottom-4 w-[360px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#FFFFFF] border border-[#DDE1E6] shadow-2xl overflow-hidden font-mono text-xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold">
@@ -289,7 +289,7 @@ export function IkDevPanel({
         </div>
 
         {/* Diagnostics & IK Solver Readout */}
-        <div className="p-2.5 rounded bg-[#0E1012] border border-surface-border text-[10px] space-y-1">
+        <div className="p-2.5 rounded bg-[#ECEEF1] border border-surface-border text-[10px] space-y-1">
           <div className="text-foreground-muted uppercase font-bold">IK Solver Diagnostics</div>
           <div className="flex justify-between">
             <span className="text-foreground-muted">Knee Bend (L):</span>

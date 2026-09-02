@@ -99,19 +99,19 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
 
   return (
     <div
-      className="fixed left-4 top-[100px] bottom-4 z-30 w-[360px] max-w-[calc(100vw-32px)] bg-[#1E2226] border border-[#262B30] text-[#E8E3DA] font-mono text-xs shadow-2xl flex flex-col"
+      className="fixed left-4 top-[100px] bottom-4 z-30 w-[360px] max-w-[calc(100vw-32px)] bg-[#FFFFFF] border border-[#DDE1E6] text-[#1B1F24] font-mono text-xs shadow-2xl flex flex-col"
       role="region"
       aria-label="Robot Live Telemetry"
     >
       {/* Panel Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[#262B30] bg-[#181B1E]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[#DDE1E6] bg-[#EEF0F3]">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-accent-teal animate-pulse" />
           <span className="font-semibold tracking-wider text-[11px]">TELEMETRY BUS // 10HZ</span>
         </div>
         <button
           onClick={onClose}
-          className="text-[#8E99A2] hover:text-[#E8E3DA] px-1 py-0.5 transition-colors"
+          className="text-[#5B6470] hover:text-[#1B1F24] px-1 py-0.5 transition-colors"
           aria-label="Close Telemetry Panel"
         >
           ✕
@@ -122,12 +122,12 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         {/* 1. Static Stability Margin Meter (§1.3, §7) */}
         <div>
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[#8E99A2] text-[10px] uppercase tracking-wider">Stability Margin</span>
+            <span className="text-[#5B6470] text-[10px] uppercase tracking-wider">Stability Margin</span>
             <span className={`font-semibold tabular-nums text-sm ${marginColor}`}>
               {(telemetry.stabilityMargin * 100).toFixed(1)}%
             </span>
           </div>
-          <div className="w-full bg-[#14171A] h-2 rounded overflow-hidden border border-[#262B30]">
+          <div className="w-full bg-[#F1F2F5] h-2 rounded overflow-hidden border border-[#DDE1E6]">
             <div
               className={`h-full transition-all duration-100 ${marginBgColor}`}
               style={{
@@ -138,13 +138,13 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         </div>
 
         {/* 2. Stance State & Body Coordinates */}
-        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#262B30]">
+        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#DDE1E6]">
           <div>
-            <div className="text-[#8E99A2] text-[10px] uppercase">Stance State</div>
-            <div className="font-semibold text-[#E8E3DA] text-[11px] mt-0.5">{currentStance}</div>
+            <div className="text-[#5B6470] text-[10px] uppercase">Stance State</div>
+            <div className="font-semibold text-[#1B1F24] text-[11px] mt-0.5">{currentStance}</div>
           </div>
           <div>
-            <div className="text-[#8E99A2] text-[10px] uppercase">Torso World (m)</div>
+            <div className="text-[#5B6470] text-[10px] uppercase">Torso World (m)</div>
             <div className="tabular-nums text-[11px] mt-0.5">
               [{telemetry.posX.toFixed(1)}, {telemetry.posY.toFixed(1)}, {telemetry.posZ.toFixed(1)}]
             </div>
@@ -152,10 +152,10 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         </div>
 
         {/* 3. Joint Torque Load Approach-To-Limit Meters (§1.5, §7) */}
-        <div className="pt-1 border-t border-[#262B30]">
-          <div className="text-[#8E99A2] text-[10px] uppercase mb-1.5 flex justify-between">
+        <div className="pt-1 border-t border-[#DDE1E6]">
+          <div className="text-[#5B6470] text-[10px] uppercase mb-1.5 flex justify-between">
             <span>Joint Torque Loads (N·m)</span>
-            <span className="text-[#83898F]">Max: 220 N·m</span>
+            <span className="text-[#6B7280]">Max: 220 N·m</span>
           </div>
           <div className="space-y-1.5">
             {joints.map((j) => {
@@ -169,8 +169,8 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
 
               return (
                 <div key={j.name} className="flex items-center gap-2">
-                  <span className="text-[10px] text-[#8E99A2] w-16 truncate">{j.name}</span>
-                  <div className="flex-1 bg-[#14171A] h-1.5 rounded overflow-hidden border border-[#262B30]">
+                  <span className="text-[10px] text-[#5B6470] w-16 truncate">{j.name}</span>
+                  <div className="flex-1 bg-[#F1F2F5] h-1.5 rounded overflow-hidden border border-[#DDE1E6]">
                     <div
                       className={`h-full transition-all duration-100 ${barColor}`}
                       style={{ width: `${pct}%` }}
@@ -186,11 +186,11 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
         </div>
 
         {/* 4. Power & Thermal Health (§5) */}
-        <div className="pt-1 border-t border-[#262B30] grid grid-cols-2 gap-2">
+        <div className="pt-1 border-t border-[#DDE1E6] grid grid-cols-2 gap-2">
           <div>
-            <div className="text-[#8E99A2] text-[10px] uppercase mb-1">Battery SoC</div>
+            <div className="text-[#5B6470] text-[10px] uppercase mb-1">Battery SoC</div>
             <div className="flex items-center gap-1.5">
-              <div className="flex-1 bg-[#14171A] h-1.5 rounded overflow-hidden border border-[#262B30]">
+              <div className="flex-1 bg-[#F1F2F5] h-1.5 rounded overflow-hidden border border-[#DDE1E6]">
                 <div
                   className="bg-accent-green h-full"
                   style={{ width: `${batterySoc * 100}%` }}
@@ -200,9 +200,9 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
             </div>
           </div>
           <div>
-            <div className="text-[#8E99A2] text-[10px] uppercase mb-1">Thermal Margin</div>
+            <div className="text-[#5B6470] text-[10px] uppercase mb-1">Thermal Margin</div>
             <div className="flex items-center gap-1.5">
-              <div className="flex-1 bg-[#14171A] h-1.5 rounded overflow-hidden border border-[#262B30]">
+              <div className="flex-1 bg-[#F1F2F5] h-1.5 rounded overflow-hidden border border-[#DDE1E6]">
                 <div
                   className="bg-accent-green h-full"
                   style={{ width: `${thermalHeadroom * 100}%` }}
@@ -215,11 +215,11 @@ export function TelemetryPanel({ isOpen, onClose }: TelemetryPanelProps) {
 
         {/* 5. Active Faults List */}
         {activeFaults.length > 0 && (
-          <div className="pt-1 border-t border-[#262B30]">
+          <div className="pt-1 border-t border-[#DDE1E6]">
             <div className="text-accent-redText text-[10px] uppercase font-semibold mb-1 flex items-center gap-1">
               <span>⚠ ACTIVE ALERTS ({activeFaults.length})</span>
             </div>
-            <ul className="text-[10px] text-[#E8E3DA] space-y-0.5 list-disc list-inside">
+            <ul className="text-[10px] text-[#1B1F24] space-y-0.5 list-disc list-inside">
               {activeFaults.map((f, i) => (
                 <li key={i}>{f}</li>
               ))}

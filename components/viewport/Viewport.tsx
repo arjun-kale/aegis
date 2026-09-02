@@ -88,7 +88,7 @@ export default function Viewport({
 
   if (contextLost) {
     return (
-      <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
+      <div className="relative w-full h-full bg-[#F1F2F5] overflow-hidden select-none">
         <div className="flex flex-col items-center justify-center gap-4 w-full h-full text-foreground font-mono text-xs px-6 text-center">
           <WifiOff className="w-8 h-8 text-accent-amber" />
           <div className="max-w-md space-y-1.5">
@@ -112,7 +112,7 @@ export default function Viewport({
   }
 
   return (
-    <div className="relative w-full h-full bg-[#14171A] overflow-hidden select-none">
+    <div className="relative w-full h-full bg-[#F1F2F5] overflow-hidden select-none">
       <Canvas
         key={canvasKey}
         camera={{ position: [4, 3.2, 6], fov: 45 }}
@@ -124,16 +124,20 @@ export default function Viewport({
         }}
         onCreated={handleCreated}
       >
-        <color attach="background" args={['#14171A']} />
+        <color attach="background" args={['#DCE3E8']} />
+        <fog attach="fog" args={['#DCE3E8', 24, 55]} />
 
-        {/* Studio & Facility Lighting — key + fill + a close rim light so the
-            robot (the actual subject) reads clearly at the default framing,
-            rather than disappearing into the dark facility around it. */}
-        <ambientLight intensity={0.65} />
-        <pointLight position={[0.5, 2.6, 1.8]} intensity={0.55} color="#E8E3DA" distance={9} decay={2} />
+        {/* Light-studio lighting: soft bright ambient (a light room bounces
+            more light than a dark one) plus a strong key light so the
+            dark/colored robot — the actual subject — reads with real
+            contrast against the light facility, rather than being washed
+            out by it. The teal rim light is the one deliberate color accent,
+            a common product-viz trick against an otherwise neutral scene. */}
+        <ambientLight intensity={0.85} />
+        <pointLight position={[0.5, 2.6, 1.8]} intensity={0.4} color="#FFFFFF" distance={9} decay={2} />
         <directionalLight
           position={[6, 10, 6]}
-          intensity={2.1}
+          intensity={2.4}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -141,7 +145,7 @@ export default function Viewport({
         />
         <directionalLight
           position={[-8, 6, -4]}
-          intensity={0.65}
+          intensity={0.55}
           color="#3E7C79"
         />
 
@@ -151,10 +155,10 @@ export default function Viewport({
           args={[60, 60]}
           cellSize={1.0}
           cellThickness={1}
-          cellColor="#262B30"
+          cellColor="#D5DAE0"
           sectionSize={5.0}
           sectionThickness={1.5}
-          sectionColor="#333A42"
+          sectionColor="#3E7C79"
           fadeDistance={45}
           fadeStrength={1.5}
         />

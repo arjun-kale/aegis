@@ -10,32 +10,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#14171A',
+        // Light theme. `red` and `teal` pass WCAG AA (4.5:1+) as text
+        // directly against white unmodified — the reverse of the dark
+        // theme, where they needed lightened Text variants. `amber`,
+        // `cyan`, and `green` don't (2.1-2.8:1 on white) and are darkened
+        // here; redText/tealText alias to their base color since a
+        // separate lighter shade is no longer needed on a light surface.
+        background: '#F6F7F9',
         surface: {
-          DEFAULT: '#1E2226',
-          raised: '#262B30',
-          border: '#333A42',
-          muted: '#181B1E',
+          DEFAULT: '#FFFFFF',
+          raised: '#EEF0F3',
+          border: '#DDE1E6',
+          muted: '#F1F2F5',
         },
         foreground: {
-          DEFAULT: '#E8E3DA',
-          muted: '#8E99A2',
-          subtle: '#5C646D',
+          DEFAULT: '#1B1F24',
+          muted: '#5B6470',
+          subtle: '#6B7280',
         },
         accent: {
-          amber: '#D98A2B',
+          amber: '#B8650E',
           red: '#C4472F',
-          // WCAG AA text-safe variant of `red` (4.55:1 on #1E2226 vs 3.27:1
-          // for the base color). Use for readable text; keep `red` for
-          // fills/borders/bars, which only need the 3:1 non-text threshold
-          // and already clear it.
-          redText: '#D06C59',
+          redText: '#C4472F',
           teal: '#3E7C79',
-          // WCAG AA text-safe variant of `teal` (4.50:1 on #1E2226 vs
-          // 3.33:1 for the base color). Same rule as redText above.
-          tealText: '#5D918E',
-          cyan: '#00E5FF',
-          green: '#2ECC71',
+          tealText: '#3E7C79',
+          cyan: '#0B7C8F',
+          green: '#178048',
         },
       },
       fontFamily: {

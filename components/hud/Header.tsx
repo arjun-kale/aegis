@@ -52,8 +52,8 @@ function PanelButton({
       aria-label={label}
       className={`flex items-center gap-1.5 px-2.5 h-8 text-[11px] font-medium transition-colors border ${
         active
-          ? 'bg-[#14171A] border-accent-teal text-accent-tealText'
-          : 'bg-[#14171A] hover:bg-[#262B30] border-[#262B30] text-[#E8E3DA]'
+          ? 'bg-[#F1F2F5] border-accent-teal text-accent-tealText'
+          : 'bg-[#F1F2F5] hover:bg-[#EDEFF2] border-[#DDE1E6] text-[#1B1F24]'
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
@@ -88,7 +88,7 @@ function DevButton({
       className={`w-full text-left whitespace-nowrap px-2.5 h-7 text-[10px] font-medium tracking-wide transition-colors border ${
         active
           ? 'bg-accent-cyan/15 border-accent-cyan/50 text-accent-cyan'
-          : 'bg-transparent hover:bg-[#262B30] border-transparent text-[#8E99A2]'
+          : 'bg-transparent hover:bg-[#EDEFF2] border-transparent text-[#5B6470]'
       }`}
     >
       {label}
@@ -144,14 +144,14 @@ export function Header({
     // space — its z-50 is scoped to header's own stacking context, so
     // without this the header (and everything in it) loses the tie to
     // the gate bar, which renders later in the DOM.
-    <header className="relative w-full h-11 shrink-0 z-50 flex items-center justify-between px-4 bg-[#1E2226] border-b border-[#262B30] text-[#E8E3DA] font-mono text-xs select-none shadow-md">
+    <header className="relative w-full h-11 shrink-0 z-50 flex items-center justify-between px-4 bg-[#FFFFFF] border-b border-[#DDE1E6] text-[#1B1F24] font-mono text-xs select-none shadow-md">
       {/* Brand & Project Identity */}
       <div className="flex items-center gap-3 shrink-0">
-        <div className="flex items-center justify-center w-6 h-6 bg-[#14171A] border border-[#262B30] text-accent-teal">
+        <div className="flex items-center justify-center w-6 h-6 bg-[#F1F2F5] border border-[#DDE1E6] text-accent-teal">
           <Shield className="w-3.5 h-3.5" />
         </div>
-        <span className="font-semibold text-sm tracking-wider text-[#E8E3DA]">A.E.G.I.S</span>
-        <span className="text-[9px] px-1.5 py-0.5 bg-[#14171A] border border-[#262B30] text-[#8E99A2] uppercase tracking-widest">
+        <span className="font-semibold text-sm tracking-wider text-[#1B1F24]">A.E.G.I.S</span>
+        <span className="text-[9px] px-1.5 py-0.5 bg-[#F1F2F5] border border-[#DDE1E6] text-[#5B6470] uppercase tracking-widest">
           v0.1.0 · Phase 10
         </span>
       </div>
@@ -162,19 +162,19 @@ export function Header({
           <button
             onClick={() => onSetRightDock('console')}
             title="No WebMCP-capable agent context was detected on this page (or the origin is not a secure context). Degrading gracefully: use the fallback console to invoke every tool by hand — it calls the exact same execute() handlers an agent would."
-            className="flex items-center gap-2 px-2.5 h-7 bg-[#14171A] border border-accent-amber/60 text-xs hover:bg-[#262B30] transition-colors cursor-help"
+            className="flex items-center gap-2 px-2.5 h-7 bg-[#F1F2F5] border border-accent-amber/60 text-xs hover:bg-[#EDEFF2] transition-colors cursor-help"
           >
-            <Radio className="w-3.5 h-3.5 text-[#8E99A2]" />
-            <span className="text-[#8E99A2]">WebMCP:</span>
+            <Radio className="w-3.5 h-3.5 text-[#5B6470]" />
+            <span className="text-[#5B6470]">WebMCP:</span>
             <span className="font-semibold text-accent-amber">FALLBACK_HARNESS</span>
-            <span className="text-[10px] text-[#8E99A2] ml-1 underline">open console</span>
+            <span className="text-[10px] text-[#5B6470] ml-1 underline">open console</span>
             {!isSecure && <span className="text-[10px] text-accent-redText ml-1">(INSECURE_ORIGIN)</span>}
           </button>
         ) : (
-          <div className="flex items-center gap-2 px-2.5 h-7 bg-[#14171A] border border-[#262B30] text-xs">
-            <Radio className={`w-3.5 h-3.5 ${hasWebMcp ? 'text-accent-green animate-pulse' : 'text-[#8E99A2]'}`} />
-            <span className="text-[#8E99A2]">WebMCP:</span>
-            <span className={`font-semibold ${hasWebMcp ? 'text-accent-green' : 'text-[#8E99A2]'}`}>
+          <div className="flex items-center gap-2 px-2.5 h-7 bg-[#F1F2F5] border border-[#DDE1E6] text-xs">
+            <Radio className={`w-3.5 h-3.5 ${hasWebMcp ? 'text-accent-green animate-pulse' : 'text-[#5B6470]'}`} />
+            <span className="text-[#5B6470]">WebMCP:</span>
+            <span className={`font-semibold ${hasWebMcp ? 'text-accent-green' : 'text-[#5B6470]'}`}>
               {hasWebMcp === null ? 'DETECTING...' : `CONNECTED (${ACTIVE_TOOLS.length} TOOLS)`}
             </span>
           </div>
@@ -216,7 +216,7 @@ export function Header({
           />
         </div>
 
-        <div className="w-px h-6 bg-[#262B30]" />
+        <div className="w-px h-6 bg-[#DDE1E6]" />
 
         {/* Tier 2 — primary actions */}
         <div className="flex items-center gap-1.5">
@@ -236,7 +236,7 @@ export function Header({
           />
         </div>
 
-        <div className="w-px h-6 bg-[#262B30]" />
+        <div className="w-px h-6 bg-[#DDE1E6]" />
 
         {/* Tier 3 — dev/debug harnesses, gated behind a single disclosure
             (Pass 1 demoted these visually; Pass 3 removes them from the
@@ -252,7 +252,7 @@ export function Header({
             className={`flex items-center gap-1.5 px-2 h-8 text-[10px] font-medium tracking-wide transition-colors border ${
               isDevMenuOpen || leftDock === 'ik' || leftDock === 'gait' || leftDock === 'perf' || qualityMode === 'HIGH'
                 ? 'bg-accent-cyan/15 border-accent-cyan/50 text-accent-cyan'
-                : 'bg-transparent hover:bg-[#262B30] border-[#262B30] text-[#83898F]'
+                : 'bg-transparent hover:bg-[#EDEFF2] border-[#DDE1E6] text-[#6B7280]'
             }`}
           >
             <Wrench className="w-3 h-3" />
@@ -261,7 +261,7 @@ export function Header({
 
           {isDevMenuOpen && (
             <div
-              className="absolute top-full right-0 mt-1.5 flex flex-col gap-1 p-1.5 bg-[#1E2226] border border-[#262B30] shadow-2xl z-50"
+              className="absolute top-full right-0 mt-1.5 flex flex-col gap-1 p-1.5 bg-[#FFFFFF] border border-[#DDE1E6] shadow-2xl z-50"
               role="menu"
               aria-label="Developer tools"
             >

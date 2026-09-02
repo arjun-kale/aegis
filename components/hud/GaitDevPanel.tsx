@@ -80,7 +80,7 @@ export function GaitDevPanel({
       : 'FLIGHT';
 
   return (
-    <div className="fixed left-4 top-[100px] bottom-4 w-[360px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#1E2226] border border-[#262B30] shadow-2xl overflow-hidden font-mono text-xs select-none">
+    <div className="fixed left-4 top-[100px] bottom-4 w-[360px] max-w-[calc(100vw-32px)] z-30 flex flex-col bg-[#FFFFFF] border border-[#DDE1E6] shadow-2xl overflow-hidden font-mono text-xs select-none">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 bg-surface-raised border-b border-surface-border">
         <div className="flex items-center gap-2 text-foreground font-semibold">
@@ -125,7 +125,7 @@ export function GaitDevPanel({
           </div>
 
           {/* Profile Specs */}
-          <div className="p-2.5 rounded bg-[#0E1012] border border-surface-border text-[10px] space-y-1">
+          <div className="p-2.5 rounded bg-[#ECEEF1] border border-surface-border text-[10px] space-y-1">
             <div className="flex justify-between">
               <span className="text-foreground-muted">Stride Length:</span>
               <span className="text-foreground">{currentConfig.strideLengthM} m</span>
@@ -227,7 +227,7 @@ export function GaitDevPanel({
                 <span>Progress: {progressM.toFixed(1)}m</span>
                 <span>Total: {totalDistanceM.toFixed(1)}m</span>
               </div>
-              <div className="w-full h-1.5 rounded bg-[#0E1012] overflow-hidden">
+              <div className="w-full h-1.5 rounded bg-[#ECEEF1] overflow-hidden">
                 <div
                   className="h-full bg-accent-cyan transition-all duration-75"
                   style={{ width: `${Math.min(100, (progressM / totalDistanceM) * 100)}%` }}
@@ -250,7 +250,7 @@ export function GaitDevPanel({
           </div>
 
           {/* Gauge Bar */}
-          <div className="w-full h-2 rounded bg-[#0E1012] overflow-hidden relative">
+          <div className="w-full h-2 rounded bg-[#ECEEF1] overflow-hidden relative">
             <div
               className={`h-full ${marginBgColor} transition-all duration-75`}
               style={{ width: `${Math.max(0, Math.min(100, margin * 100))}%` }}
@@ -266,7 +266,7 @@ export function GaitDevPanel({
         </div>
 
         {/* Dynamic Joint Torque Estimation Readout */}
-        <div className="p-3 rounded bg-[#0E1012] border border-surface-border space-y-2 text-[10px]">
+        <div className="p-3 rounded bg-[#ECEEF1] border border-surface-border space-y-2 text-[10px]">
           <div className="flex items-center gap-1.5 text-accent-amber font-bold">
             <Zap className="w-3.5 h-3.5" />
             <span>GRAVITATIONAL JOINT TORQUES (N·m)</span>

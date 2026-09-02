@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { FacilityGeometryData } from '@/lib/world/generator';
 import { FACILITY_MECHANISMS } from '@/lib/world/mechanisms';
@@ -15,14 +15,58 @@ const dummyMatrix = new THREE.Matrix4();
 const dummyPosition = new THREE.Vector3();
 const dummyQuaternion = new THREE.Quaternion();
 const dummyScale = new THREE.Vector3();
+const dummyColor = new THREE.Color();
+
+// Deterministic hash (no Math.random) so wall tinting stays stable across
+// re-renders and matches the app's seeded-generation approach elsewhere.
+function hash(i: number): number {
+  const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Trim geometry is purely a rendering embellishment — derived straight from
+// wallTransforms rather than threaded through generator.ts — so it can never
+// desync from the collider/navgrid data those transforms also drive.
+const TRIM_PAD = 0.05;
+const BASEBOARD_HEIGHT = 0.16;
+const CAP_HEIGHT = 0.08;
 
 export function Facility({ geometryData, mechanismStates }: FacilityProps) {
   const { wallTransforms, floorTransforms, rampTransforms, extractionPoint } = geometryData;
 
   const wallsMeshRef = useRef<THREE.InstancedMesh>(null);
   const floorsMeshRef = useRef<THREE.InstancedMesh>(null);
+  const baseboardMeshRef = useRef<THREE.InstancedMesh>(null);
+  const capMeshRef = useRef<THREE.InstancedMesh>(null);
 
-  // Setup InstancedMesh matrices for Walls
+  // Baseboard (grounding shadow line) + accent cap (technical trim, tying
+  // into the facility's teal accent used elsewhere) for every wall segment —
+  // two extra instanced draw calls total, independent of wall count.
+  const trimTransforms = useMemo(() => {
+    const baseboards: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+    const caps: { position: [number, number, number]; scale: [number, number, number] }[] = [];
+
+    wallTransforms.forEach((wt) => {
+      const [w, h, d] = wt.scale;
+      const [x, y, z] = wt.position;
+      const bottom = y - h / 2;
+      const top = y + h / 2;
+
+      baseboards.push({
+        position: [x, bottom + BASEBOARD_HEIGHT / 2, z],
+        scale: [w + TRIM_PAD, BASEBOARD_HEIGHT, d + TRIM_PAD],
+      });
+      caps.push({
+        position: [x, top - CAP_HEIGHT / 2, z],
+        scale: [w + TRIM_PAD, CAP_HEIGHT, d + TRIM_PAD],
+      });
+    });
+
+    return { baseboards, caps };
+  }, [wallTransforms]);
+
+  // Setup InstancedMesh matrices + a subtle per-instance tint for Walls —
+  // breaks up the flat, uniform slab look without any texture/asset loading.
   useEffect(() => {
     if (!wallsMeshRef.current) return;
     const mesh = wallsMeshRef.current;
@@ -33,10 +77,40 @@ export function Facility({ geometryData, mechanismStates }: FacilityProps) {
       dummyScale.set(wt.scale[0], wt.scale[1], wt.scale[2]);
       dummyMatrix.compose(dummyPosition, dummyQuaternion, dummyScale);
       mesh.setMatrixAt(idx, dummyMatrix);
+
+      const tint = 0.96 + hash(idx) * 0.07;
+      dummyColor.setScalar(tint);
+      mesh.setColorAt(idx, dummyColor);
     });
 
     mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }, [wallTransforms]);
+
+  // Setup InstancedMesh matrices for baseboards & accent caps
+  useEffect(() => {
+    if (!baseboardMeshRef.current || !capMeshRef.current) return;
+    const baseboardMesh = baseboardMeshRef.current;
+    const capMesh = capMeshRef.current;
+
+    trimTransforms.baseboards.forEach((bt, idx) => {
+      dummyPosition.set(bt.position[0], bt.position[1], bt.position[2]);
+      dummyQuaternion.set(0, 0, 0, 1);
+      dummyScale.set(bt.scale[0], bt.scale[1], bt.scale[2]);
+      dummyMatrix.compose(dummyPosition, dummyQuaternion, dummyScale);
+      baseboardMesh.setMatrixAt(idx, dummyMatrix);
+    });
+    baseboardMesh.instanceMatrix.needsUpdate = true;
+
+    trimTransforms.caps.forEach((ct, idx) => {
+      dummyPosition.set(ct.position[0], ct.position[1], ct.position[2]);
+      dummyQuaternion.set(0, 0, 0, 1);
+      dummyScale.set(ct.scale[0], ct.scale[1], ct.scale[2]);
+      dummyMatrix.compose(dummyPosition, dummyQuaternion, dummyScale);
+      capMesh.setMatrixAt(idx, dummyMatrix);
+    });
+    capMesh.instanceMatrix.needsUpdate = true;
+  }, [trimTransforms]);
 
   // Setup InstancedMesh matrices for Floors
   useEffect(() => {
@@ -56,7 +130,11 @@ export function Facility({ geometryData, mechanismStates }: FacilityProps) {
 
   return (
     <group>
-      {/* 1. Instanced Walls (1 draw call for all facility walls) */}
+      {/* 1. Instanced Walls (1 draw call for all facility walls). Physical
+          material picks up a faint clearcoat so panels catch the key light
+          with a slight sheen instead of reading as flat matte slabs; the
+          per-instance tint set in the matrices effect above breaks up
+          large runs of wall into distinguishable panels. */}
       <instancedMesh
         ref={wallsMeshRef}
         args={[undefined, undefined, wallTransforms.length]}
@@ -64,24 +142,61 @@ export function Facility({ geometryData, mechanismStates }: FacilityProps) {
         receiveShadow
       >
         <boxGeometry args={[1, 1, 1]} />
+        <meshPhysicalMaterial
+          color="#EAEDF1"
+          roughness={0.72}
+          metalness={0.15}
+          clearcoat={0.15}
+          clearcoatRoughness={0.6}
+        />
+      </instancedMesh>
+
+      {/* 1b. Baseboard trim — a dark, more metallic strip along the base of
+          every wall to seat it against the floor with a real shadow line,
+          rather than the wall appearing to float on the floor slab. */}
+      <instancedMesh
+        ref={baseboardMeshRef}
+        args={[undefined, undefined, trimTransforms.baseboards.length]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#4B535B" roughness={0.5} metalness={0.55} />
+      </instancedMesh>
+
+      {/* 1c. Accent cap trim — thin teal strip along the top of every wall,
+          echoing the facility's one deliberate accent color (nav grid,
+          rim light, trajectory lines) so the architecture reads as the
+          same designed system as the HUD/overlays. */}
+      <instancedMesh
+        ref={capMeshRef}
+        args={[undefined, undefined, trimTransforms.caps.length]}
+      >
+        <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial
-          color="#1E2226"
-          roughness={0.7}
+          color="#3E7C79"
+          emissive="#3E7C79"
+          emissiveIntensity={0.35}
+          roughness={0.4}
           metalness={0.3}
         />
       </instancedMesh>
 
-      {/* 2. Instanced Floors (1 draw call for all facility floors) */}
+      {/* 2. Instanced Floors (1 draw call for all facility floors) — a
+          touch darker than the walls to ground the scene, per a light
+          architectural-viz convention. */}
       <instancedMesh
         ref={floorsMeshRef}
         args={[undefined, undefined, floorTransforms.length]}
         receiveShadow
       >
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial
-          color="#181B1E"
+        <meshPhysicalMaterial
+          color="#D6DBE1"
           roughness={0.8}
-          metalness={0.2}
+          metalness={0.1}
+          clearcoat={0.08}
+          clearcoatRoughness={0.7}
         />
       </instancedMesh>
 
@@ -96,9 +211,9 @@ export function Facility({ geometryData, mechanismStates }: FacilityProps) {
         >
           <boxGeometry args={rt.scale} />
           <meshStandardMaterial
-            color="#262B30"
+            color="#C7CCD3"
             roughness={0.6}
-            metalness={0.4}
+            metalness={0.25}
           />
         </mesh>
       ))}

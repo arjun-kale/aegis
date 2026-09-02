@@ -42,7 +42,7 @@ export class ViewportErrorBoundary extends React.Component<
   render() {
     if (this.state.error) {
       return (
-        <div className="flex flex-col items-center justify-center gap-4 w-full h-full bg-[#14171A] text-foreground font-mono text-xs px-6 text-center">
+        <div className="flex flex-col items-center justify-center gap-4 w-full h-full bg-[#F1F2F5] text-foreground font-mono text-xs px-6 text-center">
           <AlertTriangle className="w-8 h-8 text-accent-red" />
           <div className="max-w-md space-y-1.5">
             <div className="text-sm font-semibold text-accent-redText">

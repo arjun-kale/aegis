@@ -111,12 +111,12 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
       : approvalStatus === 'EXECUTING'
       ? { icon: Play, cls: 'text-accent-green', bg: 'bg-accent-green/15 border-accent-green/40' }
       : approvalStatus === 'REJECTED'
-      ? { icon: AlertTriangle, cls: 'text-accent-redText', bg: 'bg-[#14171A] border-accent-red' }
+      ? { icon: AlertTriangle, cls: 'text-accent-redText', bg: 'bg-[#F1F2F5] border-accent-red' }
       : null;
 
   return (
     <div
-      className="relative w-full h-14 shrink-0 z-40 flex items-center gap-4 px-4 bg-[#1E2226] border-b border-[#262B30] font-mono text-xs select-none"
+      className="relative w-full h-14 shrink-0 z-40 flex items-center gap-4 px-4 bg-[#FFFFFF] border-b border-[#DDE1E6] font-mono text-xs select-none"
       role="region"
       aria-label="Human Authority Gate"
     >
@@ -132,19 +132,19 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           {autonomyMode === 'MANUAL_APPROVAL' ? (
             <>
               <Lock className="w-3.5 h-3.5 text-accent-amber" />
-              <span className="text-[#8E99A2]">AUTHORITY GATE:</span>
+              <span className="text-[#5B6470]">AUTHORITY GATE:</span>
               <span className="font-semibold text-accent-amber">MANUAL_APPROVAL</span>
             </>
           ) : (
             <>
               <Unlock className="w-3.5 h-3.5 text-accent-teal" />
-              <span className="text-[#8E99A2]">AUTHORITY GATE:</span>
+              <span className="text-[#5B6470]">AUTHORITY GATE:</span>
               <span className="font-semibold text-accent-tealText">
                 AUTO_SAFE (&gt;{safetyThreshold})
               </span>
             </>
           )}
-          <span className="text-[#83898F] text-[10px]">— no motion commits without this</span>
+          <span className="text-[#6B7280] text-[10px]">— no motion commits without this</span>
         </button>
       ) : (
         <>
@@ -159,8 +159,8 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           )}
 
           {/* Route summary — single-line, compact */}
-          <div className="flex items-center gap-3 text-[11px] text-[#8E99A2] truncate min-w-0">
-            <span className="text-[#E8E3DA] tabular-nums truncate">
+          <div className="flex items-center gap-3 text-[11px] text-[#5B6470] truncate min-w-0">
+            <span className="text-[#1B1F24] tabular-nums truncate">
               [{stagedProposal.targetWaypoint.x}, {stagedProposal.targetWaypoint.y}, {stagedProposal.targetWaypoint.z}]
             </span>
             <span className="text-accent-tealText font-semibold shrink-0">{stagedProposal.gaitProfile}</span>
@@ -171,7 +171,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
 
           {/* Margin gauge — compact horizontal */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-20 h-1.5 bg-[#14171A] border border-[#262B30] overflow-hidden">
+            <div className="w-20 h-1.5 bg-[#F1F2F5] border border-[#DDE1E6] overflow-hidden">
               <div
                 className={`h-full ${marginBarColor}`}
                 style={{ width: `${Math.max(0, Math.min(100, margin * 100))}%` }}
@@ -208,7 +208,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
               {isRejectOpen && (
                 <div
                   ref={popoverRef}
-                  className="absolute top-full right-0 mt-2 w-80 p-3 bg-[#14171A] border border-accent-red shadow-2xl space-y-2.5 z-50"
+                  className="absolute top-full right-0 mt-2 w-80 p-3 bg-[#F1F2F5] border border-accent-red shadow-2xl space-y-2.5 z-50"
                   role="dialog"
                   aria-label="Operator Rejection Feedback"
                 >
@@ -218,7 +218,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                   <select
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
-                    className="w-full p-1.5 bg-[#181B1E] border border-[#262B30] text-[#E8E3DA] text-xs focus:outline-none focus:border-accent-teal"
+                    className="w-full p-1.5 bg-[#EEF0F3] border border-[#DDE1E6] text-[#1B1F24] text-xs focus:outline-none focus:border-accent-teal"
                   >
                     {COMMON_REJECTION_REASONS.map((r, i) => (
                       <option key={i} value={r}>
@@ -231,7 +231,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Type custom operator reason..."
-                    className="w-full p-1.5 bg-[#181B1E] border border-[#262B30] text-[#E8E3DA] text-xs focus:outline-none focus:border-accent-teal"
+                    className="w-full p-1.5 bg-[#EEF0F3] border border-[#DDE1E6] text-[#1B1F24] text-xs focus:outline-none focus:border-accent-teal"
                   />
                   <button
                     onClick={() => {
@@ -254,7 +254,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           )}
 
           {approvalStatus === 'REJECTED' && (
-            <div className="text-[11px] text-[#E8E3DA] truncate max-w-[280px] shrink-0" title={rejectionReason ?? ''}>
+            <div className="text-[11px] text-[#1B1F24] truncate max-w-[280px] shrink-0" title={rejectionReason ?? ''}>
               Reason: &quot;{rejectionReason}&quot;
             </div>
           )}
@@ -271,7 +271,7 @@ export function AuthorityGateHUD({ onAbortExecution }: AuthorityGateHUDProps) {
           {approvalStatus !== 'EXECUTING' && (
             <button
               onClick={clearProposal}
-              className="text-[#8E99A2] hover:text-[#E8E3DA] text-[10px] px-2 py-1 border border-[#262B30] hover:border-[#3E7C79] transition-colors shrink-0"
+              className="text-[#5B6470] hover:text-[#1B1F24] text-[10px] px-2 py-1 border border-[#DDE1E6] hover:border-[#3E7C79] transition-colors shrink-0"
             >
               DISMISS [ESC]
             </button>

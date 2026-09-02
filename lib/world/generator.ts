@@ -120,8 +120,13 @@ export function generateFacility(seed: number = 42): FacilityGeometryData {
   addFloor('floor_atrium', [0, -0.1, 10], [14, 0.2, 8]);
 
   // --- 2. LEVEL 1 FLOORS & EXTRACTION (y = 2.5m) ---
-  // Upper Observation Deck (Room B: [10, 20] in X, [8, 20] in Z, y = 2.5m)
-  addFloor('floor_upper_deck', [15, 2.4, 14], [12, 0.2, 14]);
+  // Upper Observation Deck (Room B: [9, 21] in X, [9, 21] in Z, y = 2.5m).
+  // South edge sits at z=9, exactly where the ramp collider ends — the
+  // floor previously started at z=7, two meters before the ramp finished
+  // climbing, so it hung unsupported over the still-rising ramp (up to
+  // 0.7m of daylight underneath) and the ramp's last half-meter actually
+  // poked up into the floor slab.
+  addFloor('floor_upper_deck', [15, 2.4, 15], [12, 0.2, 12]);
 
   // Extraction Platform
   addFloor('floor_extraction', [18, 2.4, 18], [6, 0.2, 6]);
@@ -146,13 +151,22 @@ export function generateFacility(seed: number = 42): FacilityGeometryData {
   addWall('wall_staging_south', [0, 1.5, -6], [12, WALL_HEIGHT, WALL_THICKNESS]);
   addWall('wall_staging_north_l', [-4, 1.5, 6], [4, WALL_HEIGHT, WALL_THICKNESS]);
   addWall('wall_staging_north_r', [4, 1.5, 6], [4, WALL_HEIGHT, WALL_THICKNESS]);
-  addWall('wall_staging_west_s', [-6, 1.5, -3], [WALL_THICKNESS, WALL_HEIGHT, 6]);
-  addWall('wall_staging_west_n', [-6, 1.5, 3], [WALL_THICKNESS, WALL_HEIGHT, 6]);
-  addWall('wall_staging_east_s', [6, 1.5, -3], [WALL_THICKNESS, WALL_HEIGHT, 6]);
-  addWall('wall_staging_east_n', [6, 1.5, 3], [WALL_THICKNESS, WALL_HEIGHT, 6]);
+  // Doorway gaps (z -2..2, matching the corridors' own width) mirror the
+  // north wall's hub->atrium gap below — these were previously two flush
+  // 6m segments with no opening at all, sealing the hub off from both
+  // corridors while the nav graph still routed waypoints straight through
+  // the solid wall.
+  addWall('wall_staging_west_s', [-6, 1.5, -4], [WALL_THICKNESS, WALL_HEIGHT, 4]);
+  addWall('wall_staging_west_n', [-6, 1.5, 4], [WALL_THICKNESS, WALL_HEIGHT, 4]);
+  addWall('wall_staging_east_s', [6, 1.5, -4], [WALL_THICKNESS, WALL_HEIGHT, 4]);
+  addWall('wall_staging_east_n', [6, 1.5, 4], [WALL_THICKNESS, WALL_HEIGHT, 4]);
 
-  // East Corridor Walls (Guarded by laser_gate_02)
-  addWall('wall_east_north', [10, 1.5, 2], [8, WALL_HEIGHT, WALL_THICKNESS]);
+  // East Corridor Walls (Guarded by laser_gate_02). The north wall has a
+  // doorway gap (x 8..12.5) where the corridor opens onto the ramp — node
+  // (12,0,2) is the sole link to the ramp and was previously walled in on
+  // every side with no opening at all.
+  addWall('wall_east_north_w', [7, 1.5, 2], [2, WALL_HEIGHT, WALL_THICKNESS]);
+  addWall('wall_east_north_e', [13.25, 1.5, 2], [1.5, WALL_HEIGHT, WALL_THICKNESS]);
   addWall('wall_east_south', [10, 1.5, -2], [8, WALL_HEIGHT, WALL_THICKNESS]);
 
   // West Corridor Walls (Guarded by sealed_door_01)
@@ -164,10 +178,16 @@ export function generateFacility(seed: number = 42): FacilityGeometryData {
   addWall('wall_atrium_west', [-7, 1.5, 10], [WALL_THICKNESS, WALL_HEIGHT, 8]);
   addWall('wall_atrium_north', [0, 1.5, 14], [14, WALL_HEIGHT, WALL_THICKNESS]);
 
-  // Upper Deck Walls
-  addWall('wall_upper_south', [15, 4.0, 7], [12, WALL_HEIGHT, WALL_THICKNESS]);
+  // Upper Deck Walls. South wall sits at z=9 (was z=7) to match the
+  // floor's new south edge, and is pulled back to x >= 12 (was x >= 9) so
+  // it no longer straddles the ramp's arrival lane (ramp spans x 8.4..11.6)
+  // at head height — the wall's y-range (2.5..5.5) used to sit directly
+  // above a robot still mid-climb on the ramp at this z, reading as the
+  // ramp and wall visually merging. East wall is shortened to match (was
+  // z 7..21, hanging 2m past the floor's new edge into open air).
+  addWall('wall_upper_south', [16.5, 4.0, 9], [9, WALL_HEIGHT, WALL_THICKNESS]);
   addWall('wall_upper_north', [15, 4.0, 21], [12, WALL_HEIGHT, WALL_THICKNESS]);
-  addWall('wall_upper_east', [21, 4.0, 14], [WALL_THICKNESS, WALL_HEIGHT, 14]);
+  addWall('wall_upper_east', [21, 4.0, 15], [WALL_THICKNESS, WALL_HEIGHT, 12]);
 
   // --- 5. DISCRETE NAVIGATION GRID GRAPH ---
   const gridPoints: [number, number, number, string?][] = [

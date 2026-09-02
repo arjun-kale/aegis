@@ -40,7 +40,7 @@ export type RightDockPanel = 'toolstream' | 'facility' | 'exploded' | 'console' 
 const Viewport = dynamic(() => import('@/components/viewport/Viewport'), {
   ssr: false,
   loading: () => (
-    <div className="flex flex-col items-center justify-center w-full h-full bg-[#14171A] text-[#8E99A2] font-mono text-xs gap-3">
+    <div className="flex flex-col items-center justify-center w-full h-full bg-[#F6F7F9] text-[#5B6470] font-mono text-xs gap-3">
       <div className="w-8 h-8 border-2 border-accent-teal border-t-transparent rounded-full animate-spin" />
       <div>INITIALIZING 3D FACILITY & ENGINE...</div>
     </div>
@@ -289,7 +289,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#14171A] flex flex-col">
+    <main className="relative w-screen h-screen overflow-hidden bg-[#F6F7F9] flex flex-col">
       {/* Top Mission HUD Header — fixed height, in normal flow (Pass 1) */}
       <Header
         leftDock={leftDock}
