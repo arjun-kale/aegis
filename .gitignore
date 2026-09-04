@@ -36,3 +36,5 @@ next-env.d.ts
 # local planning docs
 /AEGIS_BUILD_PLAN.md
 design-engineering.md
+.vercel
+.env*

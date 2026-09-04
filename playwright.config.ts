@@ -11,8 +11,13 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  timeout: 45_000,
-  expect: { timeout: 10_000 },
+  // CI runners are GPU-less (SwiftShader software rendering) and only 2
+  // cores; the clearcoat-shaded facility + shadow-casting robot meshes
+  // (added in 28be2e9) render far slower there than on a real GPU, so the
+  // mission-loop test needs real headroom or it times out mid-click even
+  // though the app is functioning correctly.
+  timeout: 90_000,
+  expect: { timeout: 20_000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

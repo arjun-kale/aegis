@@ -53,7 +53,7 @@ test.describe('A.E.G.I.S mission loop via fallback console', () => {
 
     async function invokeAndParse(): Promise<any> {
       await invokeButton.click();
-      await expect(resultText).not.toHaveText('', { timeout: 10_000 });
+      await expect(resultText).not.toHaveText('', { timeout: 20_000 });
       const text = await resultText.textContent();
       return JSON.parse(text ?? '{}');
     }
